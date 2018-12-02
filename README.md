@@ -1,1 +1,1 @@
-# AI CRYPTO BLOCKCHAIN WHITEPAPER
+# Comment System for the LBRY Network
