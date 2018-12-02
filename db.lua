@@ -377,8 +377,4 @@ function _M.claims.downvote(claim_uri, times)
 	end
 end
 
-_M.claims.new"lbry://hello"
-print(inspect(_M.claims.get_data"lbry://hello"))
-print(_M.db.backup())
---_M.add_comment("lbry://hello")
 accouts:close()
