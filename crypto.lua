@@ -300,6 +300,27 @@ function sign_state_proto.__fin_state(self)
 	return ffi.string(sig, length)
 end
 
+-- Given a Lua string signature 'sig' that is 'sign_bytes' long, returns whether
+--   the public key used in the object and the signature verify the text that
+--   has been inserted into the object. The object will require re-init.
+function sign_state_proto.__ver_state(self, sig)
+	assert(type(sig) == "string", "'sig' must be a string, but is a '" ..
+	       type(sig) .. "'")
+	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
+	       " bytes long, but is " .. sig:len() .. " bytes long")
+	
+	-- Lua strings can't be implicitly converted to pointers of non-const
+	--   chars, so we have to copy the string ourselves.
+	local sig_copy = sod_gc("unsigned char *", sign_bytes)
+	ffi.copy(sig_copy, sig, sign_bytes)
+	
+	return crypto_sign_ed25519ph_final_verify(
+	        self.__state,
+		sig_copy,
+		pk
+	       ) == 0
+end
+
 -- !!! PUBLIC STUFF !!!
 
 -- Returns whether the state is initialized.
@@ -345,6 +366,16 @@ function sign_state_proto.get_signature(self)
 end
 -- An alias for the above function.
 sign_state_proto.sign = sign_state_proto.get_signature
+
+-- Given a Lua string signature 'sig' that is 'sign_bytes' long, returns whether
+--   the public key used in the object and the signature verify the text that
+--   has been inserted into the object. Automatically reinitializes the object.
+function sign_state_proto.verify(self, sig)
+	local result = self:__ver_state(sig)
+	self:init()
+	
+	return result
+end
 
 -- Constructor for the high-level signing object. Automatically initializes it.
 function _M.new_sign_object()

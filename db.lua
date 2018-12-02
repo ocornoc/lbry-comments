@@ -172,11 +172,15 @@ function _M.db.backup()
 	
 	-- 32 KiB
 	local chunk_size = 32768
+	-- Signature object
+	local sig_obj = crypto.new_sign_object()
 	
 	-- :read(0) returns an empty string if there is stuff left or nil if
 	--   we are at the end of the file, so we can use it to stop our loop.
 	while db_file:read(0) do
-		bk_file:write(db_file:read(chunk_size))
+		local chunk = db_file:read(chunk_size)
+		sig_obj:insert(chunk)
+		bk_file:write(chunk)
 	end
 	-- Now that we've copied the database file, we can close it.
 	db_file:close()
@@ -184,7 +188,7 @@ function _M.db.backup()
 	-- Write 80 "="s on a new line at the end, followed by the signature on
 	--   the next line.
 	bk_file:write("\n" .. ("="):rep(80) .. "\n")
-	bk_file:write(base64_encode(crypto.sign))
+	bk_file:write(b64_encode(sig_obj:sign()))
 	
 	bk_file:flush()
 	
