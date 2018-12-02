@@ -199,6 +199,62 @@ local _M = {_VERSION = DB_VERSION, db = {}, claims = {}}
 -------------------------------------------------------------------------------
 -- Database interactions
 
+-- A local variable determining if the database is running. If it isn't
+--   runnning, most API functions will error.
+local running = true
+
+-- Returns whether the database is running.
+function _M.db.is_running()
+	return running
+end
+
+-- Returns true if the database was stopped, nil and an error message
+--   otherwise.
+function _M.db.stop()
+	if running then
+		local result, err_msg = accouts:close()
+		
+		if result then
+			running = false
+			
+			return true
+		else
+			return nil, "There are still cursors open"
+		end
+	else
+		return nil, "The database is already stopped"
+	end
+end
+
+-- Returns true if the database was started, nil and an error message
+--   otherwise.
+function _M.db.start()
+	if running then
+		return nil, "The database is already started"
+	else
+		accouts = sql:connect(db_path)
+		running = true
+		
+		return true
+	end
+end
+
+-- Returns true if the database was restarted, nil and an error message
+--   otherwise.
+function _M.db.restart()
+	if running then
+		local result, err_msg = _M.db.stop()
+		
+		if not result then
+			return result, err_msg
+		else
+			return _M.db.start()
+		end
+	else
+		return _M.db.start()
+	end
+end
+
 -- Creates a backup of the database and 'true' if successful, otherwise nil and
 --   an error message.
 function _M.db.backup()
