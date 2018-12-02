@@ -196,8 +196,8 @@ end
 --   some failure.
 local _M = {_VERSION = DB_VERSION, db = {}, claims = {}}
 
--- Creates a backup of the database and returns the relative path to it, the
---   path being relative to this script.
+-- Creates a backup of the database and 'true' if successful, otherwise nil and
+--   an error message.
 function _M.db.backup()
 	local time = get_unix_time()
 	
@@ -210,30 +210,29 @@ function _M.db.backup()
 	local file_name = time .. "_" .. (diff and "diff" or "full") ..
 	                  ".db.backup"
 	
-	local db_file, errm = io.open(db_path, "rb")
+	local db_file, err_msg = io.open(db_path, "rb")
 	
-	if errm then
-		return nil, errm
+	if err_msg then
+		return nil, err_msg
 	end
 	
-	local bk_file, errm = io.open(file_name, "w+b")
+	local bk_file, err_msg = io.open(file_name, "w+b")
 	
-	if errm then
+	if err_msg then
 		db_file:close()
 		
-		return nil, errm
+		return nil, err_msg
 	end
 	
 	-- We open a cursor to, in theory, lock claims, comments, and backups as
 	-- read-only.
-	local curs, errm = accouts:execute[[
+	local curs, err_msg = accouts:execute[[
 	 SELECT _rowid_ FROM claims UNION ALL
-	 SELECT _rowid_ FROM comments UNION ALL
-	 SELECT _rowid_ FROM backups;
+	 SELECT _rowid_ FROM comments;
 	]]
 	
-	if errm then
-		return nil, errm
+	if err_msg then
+		return nil, err_msg
 	end
 	
 	-- 32 KiB
@@ -259,16 +258,15 @@ function _M.db.backup()
 	bk_file:flush()
 	
 	-- Returns the index position (byte #) of the last byte of the file. AKA
-	--   it returns the size of the file in bytes.
-	local bk_size = bk_file:seek"end"
-	
+	--   it returns the size of the file in KiB, rounded up.
+	local bk_size = math.ceil(bk_file:seek"end" / 1024)
 	bk_file:close()
+	
+	local success, err_msg = new_backup_entry(bk_size)
+	
 	curs:close()
 	
-	-- Now, we need to add the backup entry to the 
-	_, errm = accouts:execute
-	
-	return file_name
+	return success, err_msg
 end
 
 -- Adds a claim to the "claims" SQL table. If the claim is already in the
