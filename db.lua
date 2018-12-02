@@ -196,6 +196,9 @@ end
 --   some failure.
 local _M = {_VERSION = DB_VERSION, db = {}, claims = {}}
 
+-------------------------------------------------------------------------------
+-- Database interactions
+
 -- Creates a backup of the database and 'true' if successful, otherwise nil and
 --   an error message.
 function _M.db.backup()
@@ -268,6 +271,9 @@ function _M.db.backup()
 	
 	return success, err_msg
 end
+
+-------------------------------------------------------------------------------
+-- Claim interactions
 
 -- Adds a claim to the "claims" SQL table. If the claim is already in the
 --   database, this is a no-op. Returns 1 if the claim was added, 0 if the
@@ -377,4 +383,12 @@ function _M.claims.downvote(claim_uri, times)
 	end
 end
 
-accouts:close()
+-------------------------------------------------------------------------------
+-- Comments
+
+
+
+-------------------------------------------------------------------------------
+-- Goodbye!
+
+return _M
