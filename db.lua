@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS backups (
 	creation_time INTEGER NOT NULL UNIQUE CHECK (creation_time >= 0),
 	totalcomments INTEGER NOT NULL CHECK (totalcomments >= 0),
 	totalclaims   INTEGER NOT NULL CHECK (totalclaims >= 0),
-	lbry_perm_uri TEXT    NOT NULL UNIQUE ON CONFLICT ABORT,
+--	lbry_perm_uri TEXT    NOT NULL UNIQUE ON CONFLICT ABORT,
 	size_kb       INTEGER NOT NULL CHECK (size_kb >= 0) );
 ]])
 
@@ -121,6 +121,15 @@ local pubkey_b64 = accouts:escape(b64_encode(crypto:get_pubkey()))
 local last_backup_time = 0
 -- The minimum amount of seconds between backups, as to prevent backup spam.
 local minimum_backup_time = 3600
+
+-------------------------------------------------------------------------------
+-- Other helper functions
+
+-- Uploads the backup to LBRY using LuaBRY.
+-- TODO: Wait until much closer to public release to implement this.
+local function upload_backup(...)
+	return true
+end
 
 -------------------------------------------------------------------------------
 -- High-level interactions
