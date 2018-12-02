@@ -289,13 +289,13 @@ function _M.claims.get_data(claim_uri, int_ind)
 		            type(claim_uri) .. "."
 	end
 	
-	local curs, errm = accouts:execute(
+	local curs, err_msg = accouts:execute(
 	 "SELECT * FROM claims WHERE lbry_perm_uri = '" ..
 	 accouts:escape(claim_uri) .. "';"
 	)
 	
-	if not curs or errm then
-		return curs, errm
+	if not curs or err_msg then
+		return curs, err_msg
 	end
 	
 	local results = {}
@@ -327,19 +327,19 @@ function _M.claims.upvote(claim_uri, times)
 		return nil, "The times to upvote is fractional, not an integer."
 	end
 	
-	local data, errm = _M.claims.get_data(claim_uri)
+	local data, err_msg = _M.claims.get_data(claim_uri)
 	
-	if not data or errm then
-		return data, errm
+	if not data or err_msg then
+		return data, err_msg
 	end
 	
-	local _, errm = accouts:execute(
+	local _, err_msg = accouts:execute(
 	 "UPDATE claims SET upvotes = " .. times + data.upvotes ..
 	 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
 	)
 	
-	if errm then
-		return nil, errm
+	if err_msg then
+		return nil, err_msg
 	else
 		return times + data.upvotes
 	end
@@ -359,19 +359,19 @@ function _M.claims.downvote(claim_uri, times)
 		            "integer."
 	end
 	
-	local data, errm = _M.claims.get_data(claim_uri)
+	local data, err_msg = _M.claims.get_data(claim_uri)
 	
-	if not data or errm then
-		return data, errm
+	if not data or err_msg then
+		return data, err_msg
 	end
 	
-	local _, errm = accouts:execute(
+	local _, err_msg = accouts:execute(
 	 "UPDATE claims SET downvotes = " .. times + data.downvotes ..
 	 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
 	)
 	
-	if errm then
-		return nil, errm
+	if err_msg then
+		return nil, err_msg
 	else
 		return times + data.downvotes
 	end
