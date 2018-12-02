@@ -336,9 +336,12 @@ function sign_state_proto.insert(self, message)
 	return self
 end
 
--- Returns the signature of the object. The object will need to be re-init'd.
+-- Returns the signature of the object. Automatically reinitializes it.
 function sign_state_proto.get_signature(self)
-	return self:__fin_state()
+	local result = self:__fin_state()
+	self:init()
+	
+	return result
 end
 -- An alias for the above function.
 sign_state_proto.sign = sign_state_proto.get_signature
