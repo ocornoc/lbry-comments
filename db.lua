@@ -125,10 +125,67 @@ local minimum_backup_time = 3600
 -------------------------------------------------------------------------------
 -- Other helper functions
 
+-- Returns the number of claim rows, or nil and an error message.
+local function get_claim_num()
+	local curs, err_msg = accouts:execute[[
+	 SELECT COUNT(*) FROM claims;
+	]]
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local claim_count = curs:fetch()
+	curs:close()
+	
+	return claim_count
+end
+
+-- Returns the number of comments, or nil and an error message.
+local function get_comment_num()
+	local curs, err_msg = accouts:execute[[
+	 SELECT COUNT(*) FROM comments;
+	]]
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local comment_count = curs:fetch()
+	curs:close()
+	
+	return comment_count
+end
+
 -- Uploads the backup to LBRY using LuaBRY.
 -- TODO: Wait until much closer to public release to implement this.
 local function upload_backup(...)
 	return true
+end
+
+-- Inserts a new backup into the backup table given the name and the backup size
+--   in KiB. Returns 'true' on success or nil and an error message on failure.
+local function new_backup_entry(size)
+	-- We need the count of all of the claims and comments in the database.
+	local claim_count, err_msg = get_claim_num()
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local com_count, err_msg = get_comment_num()
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	-- Now, to insert it into the database.
+	local _, err_msg = accouts:execute([[
+	 INSERT INTO backups(creation_time, totalcomments, totalclaims, size_kb)
+	 VALUES (]] .. get_unix_time() .. ", " .. com_count .. ", " ..
+	 claim_count .. ", " .. size .. ");")
+	
+	return not err_msg or nil, err_msg
 end
 
 -------------------------------------------------------------------------------
