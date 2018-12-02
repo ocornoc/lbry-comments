@@ -442,7 +442,94 @@ end
 -------------------------------------------------------------------------------
 -- Comment interactions
 
+-- Adds a comment to the "comments" SQL table. Requires a string 'claim_uri', a
+--   string 'poster' (the name of the poster), a message 'message' (the body of
+--   the comment), and an optional integer 'parent_id' (the ID of the comment
+--   that this is a reply to). Returns 'true' on success and nil and an error
+--   message on failure.
+function _M.comments.new(claim_uri, poster, message, parent_id)
+	local claim_data, err_msg = _M.claims.get_data(claim_uri)
+	
+	-- If there is an error, 
+	if err_msg then
+		-- and the error is that the claim doesn't exist in the DB,
+		if err_msg:sub(1, 13) == "The claim URI" then
+			-- try creating the claim dynamically.
+			local result, err_msg = _M.claims.new(claim_uri)
+			-- If that doesn't work, just give up.
+			if err_msg then
+				return nil, "Failed to create claim on demand"
+			-- Otherwise, retry now that you've created the claim.
+			else
+				return _M.comments.new(claim_uri, poster,
+				                       message, parent_id)
+			end
+		-- Otherwise, just give up.
+		else
+			return nil, err_msg
+		end
+	end
+	
+	-- 'message' must be a string and mustn't be empty nor only whitespace.
+	if type(message) ~= "string" then
+		return nil, "Invalid 'message' type"
+	elseif message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, "Invalid 'message' contents"
+	end
+	
+	-- 'poster' must be a string and mustn't be empty nor only whitespace.
+	if type(poster) ~= "string" then
+		return nil, "Invalid 'poster' type"
+	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, "Invalid 'poster' contents"
+	end
+	
+	local claim_index = claim_data.lbry_perm_uri
+	local poster_name = accouts:escape(poster_name:gsub("^%s+", "")
+	                                              :gsub("%s+$", ""))
+	local post_time = get_unix_time()
+	-- We strip all beginning and ending whitespace from 'message'.
+	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
+	
+	-- We need to execute two different SQL statements depending on whether
+	--   this comment is a reply.
+	if parent_id then
+		local _, err_msg = _M.comments.get_data(parent_id)
+		
+		if err_msg then
+			return nil, "Couldn't find the parent comment"
+		end
 
+		return accouts:execute(
+		 "INSERT INTO comments (claim_index, poster_name, " ..
+		 "parent_com, post_time, message) VALUES (" .. claim_index ..
+		 ", '" .. poster_name .. "', " .. ", " .. parent_com .. ", " ..
+		 post_time .. ", '" .. message .. "');"
+		) == 1
+	else
+		return accouts:execute(
+		 "INSERT INTO comments (claim_index, poster_name, post_time," ..
+		 " message) VALUES ('" .. claim_index .. ", '" .. poster_name ..
+		 "', " .. post_time .. ", '" .. message .. "');"
+		) == 1
+	end
+end
+
+-- Returns the data for the row containing a given comment ID. If int_ind ==
+--   true, then the indices are integers rather than alphanumeric. int_ind is
+--   optional.
+--function _M.comments.get_data(comment_id, int_ind)
+--	if type(comment_id)
+--end
+
+-- TODO
+-- Need _M.comments.get_replies (gets all replies to a comment)
+-- Need _M.claims.get_comments (gets all comments on a claim)
+-- Need _M.comments.upvote (upvotes a comment)
+-- Need _M.comments.downvote (downvotes a comment)
+-- Need _M.comments.edit (edits the message of a comment)
+-- Need _M.comments.delete (deletes a comment, should automatically delete
+--   replies)
 
 -------------------------------------------------------------------------------
 -- Goodbye!
