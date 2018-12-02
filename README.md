@@ -10,3 +10,5 @@ unsafe.
 insecure.
 you're responsible for putting worthwhile garbage in here.
 ```
+
+Please make sure to change the file `seed`.
