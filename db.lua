@@ -150,7 +150,7 @@ function _M.db.backup()
 		return nil, errm
 	end
 	
-	local bk_file, errm = io.open(file_name, "a+b")
+	local bk_file, errm = io.open(file_name, "w+b")
 	
 	if errm then
 		db_file:close()
