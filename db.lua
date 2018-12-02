@@ -194,7 +194,7 @@ end
 -- All of these automatically sanitize their inputs automatically. Don't pre-
 --   sanitize. All of these will return nil and an error message if there is
 --   some failure.
-local _M = {_VERSION = DB_VERSION, db = {}, claims = {}}
+local _M = {_VERSION = DB_VERSION, db = {}, claims = {}, comments = {}}
 
 -------------------------------------------------------------------------------
 -- Database interactions
@@ -440,7 +440,7 @@ function _M.claims.downvote(claim_uri, times)
 end
 
 -------------------------------------------------------------------------------
--- Comments
+-- Comment interactions
 
 
 
