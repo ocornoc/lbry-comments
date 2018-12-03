@@ -541,9 +541,34 @@ end
 -- Returns the data for the row containing a given comment ID. If int_ind ==
 --   true, then the indices are integers rather than alphanumeric. int_ind is
 --   optional.
---function _M.comments.get_data(comment_id, int_ind)
---	if type(comment_id)
---end
+function _M.comments.get_data(comment_id, int_ind)
+	if type(comment_id) ~= "number" then
+		return nil, "'comment_id' must be a number"
+	end
+	
+	local curs, err_msg = accouts:execute(
+	 "SELECT * FROM comments WHERE comm_index = '" .. comment_id .. "';"
+	)
+	
+	if not curs or err_msg then
+		return curs, err_msg
+	end
+	
+	local results = {}
+	-- In order to specify alphanumeric/int keys, we have to give a table
+	--   parameter to "fetch".
+	--   https://keplerproject.github.io/luasql/manual.html#cursor_object
+	curs:fetch(results, (int_ind and "n") or "a")
+	curs:close()
+	
+	-- If results is empty, then the comment doesn't exist in the SQL DB.
+	if not is_empty_table(results) then
+		return results
+	else
+		return nil, "Comment #" .. comment_id .. " does not exist."
+	end
+end
+
 
 -- TODO
 -- Need _M.comments.get_replies (gets all replies to a comment)
