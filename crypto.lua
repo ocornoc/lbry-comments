@@ -76,7 +76,7 @@ local b64_original_np  = 3
 local b64_urlsafe      = 5
 local b64_urlsafe_np   = 7
 
-assert(sodium.sodium_init() == 0ULL, "libsodium failed to initialize")
+assert(sodium.sodium_init() == 0, "libsodium failed to initialize")
 
 -------------------------------------------------------------------------------
 -- Padding
