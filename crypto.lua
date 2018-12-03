@@ -198,10 +198,13 @@ assert(sodium.sodium_mprotect_noaccess(sk) == 0,
 assert(sodium.sodium_mprotect_noaccess(kseed) == 0,
        "Couldn't full-protect the key seed")
 kseed = nil
-print("Generated keypair from seed.")
 
--- Print the Base64 of the public key.
-print("Public key (Base64): " .. b64_encode(pk, sign_pkbytes))
+if _G.crypto_lib_print then
+	print("Generated keypair from seed.")
+
+	-- Print the Base64 of the public key.
+	print("Public key (Base64): " .. b64_encode(pk, sign_pkbytes))
+end
 
 -------------------------------------------------------------------------------
 -- Signing setup
