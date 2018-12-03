@@ -405,8 +405,8 @@ function _M.claims.upvote(claim_uri, times)
 end
 
 -- Adds a given amount of downvotes to the row containing the given claim URI.
--- It returns the final amount of downvotes. If the times to downvote isn't
--- given, it downvotes once. times must be an integer, and is optional.
+--   It returns the final amount of downvotes. If the times to downvote isn't
+--   given, it downvotes once. times must be an integer, and is optional.
 function _M.claims.downvote(claim_uri, times)
 	if times == nil then
 		times = 1
