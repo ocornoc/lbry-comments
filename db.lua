@@ -569,9 +569,47 @@ function _M.comments.get_data(comment_id, int_ind)
 	end
 end
 
+-- Returns an array containing the data for all of the replies to the comment
+--   with ID 'comment_id'. If int_ind == true, then the indices of the data are
+--   integers rather than alphanumeric. int_ind is optional.
+function _M.comments.get_replies(comment_id, int_ind)
+	if type(comment_id) ~= "number" then
+		return nil, "'comment_id' must be a number"
+	end
+	
+	-- We fetch the parent comment data in order to check if the comment is
+	--   actually in the database.
+	local comment, err_msg = _M.comments.get_data(comment_id)
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local curs, err_msg = accouts:execute(
+	 "SELECT * FROM comments WHERE parent_com = '" .. comment_id .. "';"
+	)
+	
+	if not curs or err_msg then
+		return curs, err_msg
+	end
+	
+	-- We need a buffer variable 'latest_results' to store the result of the
+	--   search.
+	local results = {}
+	local latest_results
+	int_ind = (int_ind and "n") or "a"
+	
+	repeat
+		latest_results = curs:fetch(latest_results, int_ind)
+		table.insert(results, latest_results)
+	until not latest_results
+	
+	curs:close()
+	
+	return results
+end
 
 -- TODO
--- Need _M.comments.get_replies (gets all replies to a comment)
 -- Need _M.claims.get_comments (gets all comments on a claim)
 -- Need _M.comments.upvote (upvotes a comment)
 -- Need _M.comments.downvote (downvotes a comment)
