@@ -62,17 +62,12 @@ int sodium_mprotect_readonly(void *ptr) __attribute__ ((nonnull));
 int sodium_mprotect_readwrite(void *ptr) __attribute__ ((nonnull));
 ]]
 
--- export.h macros
--- called "SODIUM_SIZE_MAX" originally
-local sodium_size_max = 0ULL - 1
-
 -- crypto_sign_ed25519.h macros and size definitions
 local sign_statebytes  = tonumber(sodium.crypto_sign_ed25519ph_statebytes())
 local sign_bytes       = tonumber(sodium.crypto_sign_ed25519_bytes())
 local sign_seedbytes   = tonumber(sodium.crypto_sign_ed25519_seedbytes())
 local sign_pkbytes     = tonumber(sodium.crypto_sign_ed25519_publickeybytes())
 local sign_skbytes     = tonumber(sodium.crypto_sign_ed25519_secretkeybytes())
-local sign_messagebytes_max = sodium_size_max - sign_bytes
 
 -- utils.h Base64 variants
 -- "_np" means "no padding"
