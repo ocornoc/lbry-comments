@@ -4,9 +4,6 @@ local sql = sql_driver.sqlite3()
 -- No networking components are actually used
 local sock = require "socket"
 local mime = require "mime"
--- For publishing backups
--- Only used for debug
-local inspect = require "inspect"
 
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
