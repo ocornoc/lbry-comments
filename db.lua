@@ -436,6 +436,32 @@ function _M.claims.downvote(claim_uri, times)
 	end
 end
 
+-- Given an index for a claim, returns the URI for it. If the index isn't found,
+--   then nil and an error message are returned.
+function _M.claims.get_uri(claim_index)
+	if type(claim_index) ~= "number" then
+		return nil, "'claim_index' must be a number"
+	end
+	
+	local curs, err_msg = accouts:execute(
+	 "SELECT lbry_perm_uri FROM claims WHERE claim_index = " ..
+	 claim_index .. ";"
+	)
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local results = curs:fetch()
+	curs:close()
+	
+	if results then
+		return results
+	else
+		return nil, "URI not found"
+	end
+end
+
 -------------------------------------------------------------------------------
 -- Comment interactions
 
