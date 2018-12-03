@@ -611,6 +611,7 @@ end
 
 -- TODO
 -- Need _M.claims.get_comments (gets all comments on a claim)
+-- Need _M.claims.delete (deletes a claim and all comments with it)
 -- Need _M.comments.upvote (upvotes a comment)
 -- Need _M.comments.downvote (downvotes a comment)
 -- Need _M.comments.edit (edits the message of a comment)
