@@ -191,7 +191,7 @@ end
 -- All of these automatically sanitize their inputs automatically. Don't pre-
 --   sanitize. All of these will return nil and an error message if there is
 --   some failure.
-local _M = {_VERSION = DB_VERSION, db = {}, claims = {}, comments = {}}
+local _M = {_VERSION = DB_VERSION, claims = {}, comments = {}}
 
 -------------------------------------------------------------------------------
 -- Database interactions
@@ -201,13 +201,13 @@ local _M = {_VERSION = DB_VERSION, db = {}, claims = {}, comments = {}}
 local running = true
 
 -- Returns whether the database is running.
-function _M.db.is_running()
+function _M.is_running()
 	return running
 end
 
 -- Returns true if the database was stopped, nil and an error message
 --   otherwise.
-function _M.db.stop()
+function _M.stop()
 	if running then
 		local result, err_msg = accouts:close()
 		
@@ -225,7 +225,7 @@ end
 
 -- Returns true if the database was started, nil and an error message
 --   otherwise.
-function _M.db.start()
+function _M.start()
 	if running then
 		return nil, "The database is already started"
 	else
@@ -238,23 +238,23 @@ end
 
 -- Returns true if the database was restarted, nil and an error message
 --   otherwise.
-function _M.db.restart()
+function _M.restart()
 	if running then
-		local result, err_msg = _M.db.stop()
+		local result, err_msg = _M.stop()
 		
 		if not result then
 			return result, err_msg
 		else
-			return _M.db.start()
+			return _M.start()
 		end
 	else
-		return _M.db.start()
+		return _M.start()
 	end
 end
 
 -- Creates a backup of the database and 'true' if successful, otherwise nil and
 --   an error message.
-function _M.db.backup()
+function _M.backup()
 	local time = get_unix_time()
 	
 	if time - last_backup_time <= minimum_backup_time then
