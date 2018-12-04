@@ -179,9 +179,55 @@ describe("High-level SQLite Abstraction", function()
 			assert.are.same(com4res, {})
 		end)
 		
+		it("should be able to upvote comments", function()
+			-- Test single upvotes and multi-upvotes.
+			-- Alphanumeric-key'd data of comment 1.
+			local com1a = db.comments.get_data(com1id)
+			assert.is_truthy(com1a)
+			-- Get the upvotes for comment 1.
+			local com1_oldup = com1a.upvotes
+			assert.is_equal("number", type(com1_oldup))
+			-- Upvote comment 1 once.
+			local com1_newup = db.comments.upvote(com1id)
+			-- Make sure the returned value reflects that.
+			assert.are_equal(com1_oldup + 1, com1_newup)
+			-- Upvote comment 1 five times.
+			com1_newup = db.comments.upvote(com1id, 5)
+			-- Make sure the returned value reflects that.
+			assert.are_equal(com1_oldup + 6, com1_newup)
+			-- Get comment 1's data again.
+			local com1a_new = db.comments.get_data(com1id)
+			-- Make sure the upvotes in the database reflects the
+			--   new upvotes.
+			assert.are_equal(com1a.upvotes + 6, com1a_new.upvotes)
+		end)
+		
+		it("should be able to downvote comments", function()
+			-- Test single downvotes and multi-downvotes.
+			-- Alphanumeric-key'd data of comment 2.
+			local com2a = db.comments.get_data(com2id)
+			assert.is_truthy(com2a)
+			-- Get the downvotes for comment 2.
+			local com2_olddown = com2a.upvotes
+			assert.is_equal("number", type(com2_olddown))
+			-- Downvote comment 2 once.
+			local com2_newdown = db.comments.downvote(com2id)
+			-- Make sure the returned value reflects that.
+			assert.are_equal(com2_olddown + 1, com2_newdown)
+			-- Downvote comment 2 five times.
+			com2_newdown = db.comments.downvote(com2id, 5)
+			-- Make sure the returned value reflects that.
+			assert.are_equal(com2_olddown + 6, com2_newdown)
+			-- Get comment 2's data again.
+			local com2a_new = db.comments.get_data(com2id)
+			-- Make sure the downvotes in the database reflects the
+			--   new downvotes.
+			assert.are_equal(com2a.downvotes + 6,
+			                 com2a_new.downvotes)
+		end)
+		
 		pending("Need to check for comment deletion when parent " ..
 		        "claim is deleted")
-		pending "Need to implement u/dvotes"
 		pending "Need to implement edits"
 		pending "Need to implement deletion"
 	end)

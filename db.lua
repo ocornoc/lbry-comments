@@ -638,11 +638,82 @@ function _M.comments.get_replies(comment_id, int_ind)
 	return results
 end
 
+-- Adds a given amount of upvotes to the row containing the given comment ID. It
+--   returns the final amount of upvotes. If the times to upvote isn't given,
+--   the function upvotes once. times must be an integer, and is optional.
+function _M.comments.upvote(comment_id, times)
+	if times == nil then
+		times = 1
+	elseif type(times) ~= "number" then
+		return nil, "The times to upvote needs to be a number, is a " ..
+		            type(times) .. "."
+	elseif times % 1 ~= 0 then
+		return nil, "The times to upvote is fractional, not an integer."
+	end
+	
+	local data, err_msg = _M.comments.get_data(comment_id)
+	
+	if not data or err_msg then
+		return data, err_msg
+	elseif data.comm_index ~= comment_id then
+		print("In preparation for this bug, I have added a debug " ..
+		      "print statement. This should NEVER happen, and if " ..
+		      "it does, panic immediately. Or file a bug report.")
+		return nil, "comm_index ~= comment_id"
+	end
+	
+	local _, err_msg = accouts:execute(
+	 "UPDATE comments SET upvotes = " .. times + data.upvotes ..
+	 " WHERE comm_index = '" .. comment_id .. "';"
+	)
+	
+	if err_msg then
+		return nil, err_msg
+	else
+		return times + data.upvotes
+	end
+end
+
+-- Adds a given amount of downvotes to the row containing the given comment ID.
+--   It returns the final amount of downvotes. If the times to downvote isn't
+--   given, it downvotes once. times must be an integer, and is optional.
+function _M.comments.downvote(comment_id, times)
+	if times == nil then
+		times = 1
+	elseif type(times) ~= "number" then
+		return nil, "The times to downvote needs to be a number, " ..
+		            "is a " .. type(times) .. "."
+	elseif times % 1 ~= 0 then
+		return nil, "The times to downvote is fractional, not an " ..
+		            "integer."
+	end
+	
+	local data, err_msg = _M.comments.get_data(comment_id)
+	
+	if not data or err_msg then
+		return data, err_msg
+	elseif data.comm_index ~= comment_id then
+		print("In preparation for this bug, I have added a debug " ..
+		      "print statement. This should NEVER happen, and if " ..
+		      "it does, panic immediately. Or file a bug report.")
+		return nil, "comm_index ~= comment_id"
+	end
+	
+	local _, err_msg = accouts:execute(
+	 "UPDATE comments SET downvotes = " .. times + data.downvotes ..
+	 " WHERE comm_index = '" .. comment_id .. "';"
+	)
+	
+	if err_msg then
+		return nil, err_msg
+	else
+		return times + data.downvotes
+	end
+end
+
 -- TODO
 -- Need _M.claims.get_comments (gets all comments on a claim)
 -- Need _M.claims.delete (deletes a claim and all comments with it)
--- Need _M.comments.upvote (upvotes a comment)
--- Need _M.comments.downvote (downvotes a comment)
 -- Need _M.comments.edit (edits the message of a comment)
 -- Need _M.comments.delete (deletes a comment, should automatically delete
 --   replies)
