@@ -13,8 +13,8 @@ If you have busted installed, you can run busted from the project directory in o
 (In order of likelihood of earliest completion)
 
 - [x] busted support
-- [ ] LDoc/LuaDoc-style documentation
-- [ ] comment u/d-voting
+- [x] comment u/d-voting
 - [ ] claim/comment deletion
+- [ ] LDoc/LuaDoc-style documentation
 - [ ] comment editing
 - [ ] posting backups to LBRY
