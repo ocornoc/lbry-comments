@@ -1,8 +1,8 @@
---[[--
+--[[
 This file is part of LBRY-Comments.
 
 LBRY-Comments provides a simple network database for commenting.
-Copyright (C) 2018 Grayson Burton and Oleg Silken
+Copyright (C) 2018 Grayson Burton and Oleg Silkin
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
