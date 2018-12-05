@@ -32,7 +32,7 @@ local DB_VERSION = "0.0.0"
 -- The path to the database, relative to the script.
 local db_path = "accoutrements.db"
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Helper functions
 
 -- Returns the UTC Unix Epoch time in seconds as an integer.
@@ -61,7 +61,7 @@ local function is_empty_table(t)
 	return true
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Setting up connections and tables
 
 local accouts = assert(sql:connect(db_path))
@@ -139,7 +139,7 @@ local last_backup_time = 0
 -- The minimum amount of seconds between backups, as to prevent backup spam.
 local minimum_backup_time = 3600
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Other helper functions
 
 -- Returns the number of claim rows, or nil and an error message.
@@ -225,7 +225,7 @@ local function get_latest_comment()
 	end
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- High-level interactions
 
 -- All of these automatically sanitize their inputs automatically. Don't pre-
@@ -233,7 +233,7 @@ end
 --   some failure.
 local _M = {_VERSION = DB_VERSION, claims = {}, comments = {}}
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Database interactions
 
 -- A local variable determining if the database is running. If it isn't
@@ -365,7 +365,7 @@ function _M.backup()
 	return success, err_msg
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Claim interactions
 
 -- Adds a claim to the "claims" SQL table. If the claim is already in the
@@ -502,7 +502,7 @@ function _M.claims.get_uri(claim_index)
 	end
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Comment interactions
 
 -- Adds a comment to the "comments" SQL table. Requires a string 'claim_uri', a
@@ -738,7 +738,7 @@ end
 -- Need _M.comments.delete (deletes a comment, should automatically delete
 --   replies)
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Goodbye!
 
 return _M
