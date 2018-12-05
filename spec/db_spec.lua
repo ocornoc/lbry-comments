@@ -157,7 +157,7 @@ describe("High-level SQLite Abstraction", function()
 			com3id = db.comments.new(url3, com3pos, com3mes)
 			assert.is_truthy(com3id)
 			-- Make comment 4 a reply to comment 3.
-			com4id = db.comments.new(url3, com4pos, com4mes, com3id)
+			com4id = db.comments.new_reply(com3id, com4pos, com4mes)
 			assert.is_truthy(com4id)
 		end)
 		

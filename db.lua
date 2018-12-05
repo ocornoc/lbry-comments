@@ -542,10 +542,9 @@ end
 -- Comment interactions
 
 -- Adds a comment to the "comments" SQL table. Requires a string 'claim_uri', a
---   string 'poster' (the name of the poster), a message 'message' (the body of
---   the comment), and an optional integer 'parent_id' (the ID of the comment
---   that this is a reply to). Returns the ID on success and nil and an error
---   message on failure.
+--   string 'poster' (the name of the poster), and a message 'message' (the body
+--   of the comment). Returns the ID on success and nil and an error message on
+--   failure.
 function _M.comments.new(claim_uri, poster, message, parent_id)
 	local claim_data, err_msg = _M.claims.get_data(claim_uri)
 	
@@ -590,34 +589,62 @@ function _M.comments.new(claim_uri, poster, message, parent_id)
 	-- We strip all beginning and ending whitespace from 'message'.
 	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
 	
-	-- We need to execute two different SQL statements depending on whether
-	--   this comment is a reply.
-	-- We use 'exec_err' to tell us whether the executed SQL had an error.
-	local exec_err
-	if parent_id then
-		local _, err_msg = _M.comments.get_data(parent_id)
-		
-		if err_msg then
-			return nil, "Couldn't find the parent comment"
-		end
-		
-		_, exec_err = accouts:execute(
-		 "INSERT INTO comments (claim_index, poster_name, " ..
-		 "parent_com, post_time, message) VALUES (" .. claim_index ..
-		 ", '" .. poster_name .. "', " .. parent_id .. ", " ..
-		 post_time .. ", '" .. message .. "');"
-		)
+	local _, err_msg = accouts:execute(
+	 "INSERT INTO comments (claim_index, poster_name, post_time," ..
+	 " message) VALUES (" .. claim_index .. ", '" .. poster_name .. "', " ..
+	 post_time .. ", '" .. message .. "');"
+	)
+	
+	if err_msg then
+		return nil, err_msg
 	else
-		_, exec_err = accouts:execute(
-		 "INSERT INTO comments (claim_index, poster_name, post_time," ..
-		 " message) VALUES (" .. claim_index .. ", '" .. poster_name ..
-		 "', " .. post_time .. ", '" .. message .. "');"
-		)
+		return get_latest_comment()
+	end
+end
+
+-- Adds a comment reply to the "comments" SQL table. Requires a number
+--   'parent_id' (the comment ID that this is a reply to), a string 'poster'
+--   (the name of the poster), and a message 'message' (the body of the
+--   comment). Returns the ID on success and nil and an error message on
+--   failure.
+function _M.comments.new_reply(parent_id, poster, message)
+	-- We don't need to sanitize 'parent_id' because get_data does for us.
+	local parent_data, err_msg = _M.comments.get_data(parent_id)
+	
+	if err_msg then
+		return nil, err_msg
 	end
 	
-	if exec_err then
-		print(exec_err)
-		return nil, exec_err
+	-- 'message' must be a string and mustn't be empty nor only whitespace.
+	if type(message) ~= "string" then
+		return nil, "Invalid 'message' type"
+	elseif message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, "Invalid 'message' contents"
+	end
+	
+	-- 'poster' must be a string and mustn't be empty nor only whitespace.
+	if type(poster) ~= "string" then
+		return nil, "Invalid 'poster' type"
+	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, "Invalid 'poster' contents"
+	end
+	
+	local claim_index = parent_data.claim_index
+	local poster_name = accouts:escape(poster:gsub("^%s+", "")
+	                                         :gsub("%s+$", ""))
+	local post_time = get_unix_time()
+	-- We strip all beginning and ending whitespace from 'message'.
+	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
+	
+	local _, err_msg = accouts:execute(
+	 "INSERT INTO comments (claim_index, poster_name, parent_com, " ..
+	 "post_time, message) VALUES (" .. claim_index .. ", '" ..
+	 poster_name .. "', " .. parent_id .. ", " .. post_time .. ", '" ..
+	 message .. "');"
+	)
+	
+	if err_msg then
+		return nil, err_msg
 	else
 		return get_latest_comment()
 	end
