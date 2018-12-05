@@ -137,6 +137,7 @@ describe("High-level SQLite Abstraction", function()
 			assert.are_equal(extrap_url3, url3)
 		end)
 		
+		-- This will come when LBRY wallet syncing is introduced.
 		pending "Need to implement claim deletion"
 	end)
 	
@@ -254,6 +255,7 @@ describe("High-level SQLite Abstraction", function()
 			assert.is_equal(1, #db.claims.get_comments(url3))
 		end)
 		
+		-- These will come when LBRY wallet syncing is introduced.
 		pending("Need to check for comment deletion when parent " ..
 		        "claim is deleted")
 		pending "Need to implement edits"
