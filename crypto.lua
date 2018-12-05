@@ -16,20 +16,30 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
---]]--
+]]
+
+--------------------------------------------------------------------------------
+-- A high-level wrapper around libsodium.
+-- @module crypto
+-- @alias _M
+-- @copyright 2018 Grayson Burton and Oleg Silkin
+-- @license GNU AGPLv3
+-- @author Grayson Burton
+
+-----------------------------------------DEPS------------------------------------
 
 local ffi = require "ffi"
-local bit = require "bit"
 
--------------------------------------------------------------------------------
--- Options
+-----------------------------------------OPTS------------------------------------
 
--- The path to the file containing the keypair generation seed
+-- The path to the file containing the keypair generation seed.
 local kseedfile_path = "seed"
 
--------------------------------------------------------------------------------
--- Declarations
+-----------------------------------------DECS------------------------------------
 
+--- A list of functions for interfacing with libsodium.
+-- @table sodium
+-- @local
 local sodium = assert(ffi.load("sodium", false))
 
 ffi.cdef[[
@@ -82,27 +92,39 @@ int sodium_mprotect_readonly(void *ptr) __attribute__ ((nonnull));
 int sodium_mprotect_readwrite(void *ptr) __attribute__ ((nonnull));
 ]]
 
--- crypto_sign_ed25519.h macros and size definitions
+--- Constants.
+-- @section constants
+-- @local
+
+--- The number of bytes in an Ed25519/ph state.
+-- Should equal 208, excluding padding.
 local sign_statebytes  = tonumber(sodium.crypto_sign_ed25519ph_statebytes())
+--- The number of bytes in an Ed25519/ph signature.
+-- Should equal 64.
 local sign_bytes       = tonumber(sodium.crypto_sign_ed25519_bytes())
+--- The number of bytes in an Ed25519/ph seed.
+-- Should equal 32.
 local sign_seedbytes   = tonumber(sodium.crypto_sign_ed25519_seedbytes())
+--- The number of bytes in an Ed25519/ph public key.
+-- Should equal 32.
 local sign_pkbytes     = tonumber(sodium.crypto_sign_ed25519_publickeybytes())
+--- The number of bytes in an Ed25519/ph secret key.
+-- Should equal 64.
 local sign_skbytes     = tonumber(sodium.crypto_sign_ed25519_secretkeybytes())
 
--- utils.h Base64 variants
--- "_np" means "no padding"
-local b64_original     = 1
-local b64_original_np  = 3
-local b64_urlsafe      = 5
-local b64_urlsafe_np   = 7
 -- libsodium returns -1 on failure, 0 on success, and 1 if it's already been
 --  initialized.
 assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Padding
+-- @section padding
+-- @local
 
--- This is a very basic zero-padding function. It won't truncate the result.
+--- This is a very basic zeropadding function. It won't truncate the result.
+-- @tparam string str The string to zeropad.
+-- @tparam number to_len The length to pad to.
+-- @treturn string The input zeropadded to `to_len`.
 local function zeropad_loose(str, to_len)
 	local pad_needed = to_len - str:len()
 	
@@ -113,7 +135,10 @@ local function zeropad_loose(str, to_len)
 	end
 end
 
--- This is a very basic zero-padding function. It truncates the result.
+--- This is a very basic zero-padding function. It truncates the result.
+-- @tparam string str The string to zeropad.
+-- @tparam number to_len The length to pad to.
+-- @treturn string The input zeropadded to `to_len`.
 local function zeropad_strict(str, to_len)
 	local pad_needed = to_len - str:len()
 	
@@ -126,11 +151,18 @@ local function zeropad_strict(str, to_len)
 	end
 end
 
--------------------------------------------------------------------------------
--- Safe allocation of specific types.
+--------------------------------------------------------------------------------
+-- Safe allocation
+-- @section allocation
+-- @local
 
--- Uses sodium's malloc (secure memory) in order to safely allocated C objects.
--- Returns a pointer of given type 'p_type' of size 'size'.
+--- Uses sodium's malloc in order to safely allocate C objects.
+-- Returns a pointer of type `p_type` of size `size`.
+-- @warning It doesn't check if the allocation failed.
+-- @see sod_gc
+-- @tparam string p_type The C type of the pointer.
+-- @tparam int size The size of the data being pointed to, in bytes.
+-- @treturn pointer A garbage-collected pointer.
 local function sod_unsafe_gc(p_type, size)
 	local new_p = ffi.new(p_type, sodium.sodium_malloc(size))
 	ffi.gc(new_p, sodium.sodium_free)
@@ -138,8 +170,12 @@ local function sod_unsafe_gc(p_type, size)
 	return new_p
 end
 
--- A more safe version of 'sod_unsafe_gc', as it will scream in agony if the
---   pointer returns as NULL.
+--- Uses sodium's malloc in order to safely allocate C objects.
+-- Returns a pointer of type `p_type` of size `size`.
+-- @raise Throws when it fails to allocate the pointer.
+-- @tparam string p_type The C type of the pointer.
+-- @tparam int size The size of the data being pointed to, in bytes.
+-- @treturn pointer A safe garbage-collected pointer.
 local function sod_gc(p_type, size)
 	local new_p = sod_unsafe_gc(p_type, size)
 	assert(tonumber(new_p) ~= 0, "Failed to allocate pointer of type '" ..
@@ -148,11 +184,27 @@ local function sod_gc(p_type, size)
 	return new_p
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Base64
+-- @section base64
+-- @local
 
--- Returns the length of the Base64-encoded version of an amount of bytes
---   'size' and optional variant 'variant' (defaults to b64_original).
+--- Specifies the base64 "original" variant.
+local b64_original     = 1
+--- Specifies the base64 "original" variant with no padding.
+local b64_original_np  = 3
+--- Specifies the base64 "urlsafe" variant.
+local b64_urlsafe      = 5
+--- Specifies the base64 "urlsafe" variant with no padding.
+local b64_urlsafe_np   = 7
+
+--- Returns the length of the Base64-encoded string.
+-- The length will differ given different `size` and `variant` inputs.
+-- @raise Throws if `variant` isn't a variant.
+-- @tparam int size The size (in bytes) of the string to encode.
+-- @tparam[opt=b64_original] variant variant The Base64 variant to use.
+-- @treturn int The amount of bytes required to store the encoded input.
+-- @see b64_original, b64_original_np, b64_urlsafe, b64_urlsafe_np
 local function b64_len(size, variant)
 	variant = variant or b64_original
 	assert(type(variant) == "number",
@@ -164,17 +216,36 @@ local function b64_len(size, variant)
 	return tonumber(sodium.sodium_base64_encoded_len(size, variant))
 end
 
--- Returns a string containing the Base64-encoded version of string 'message'
---   using optional variant 'variant' (defaults to b64_original). Must be
---   given 'message_len' IFF 'message' isn't a Lua string.
-local function b64_encode(message, message_len, variant)
+--- Encodes a string into Base64.
+-- It uses libsodium to perform the encoding.
+-- @raise Throws if `variant` isn't a variant.
+-- @tparam string message The message to encode.
+-- @tparam[opt=b64_original] variant variant The variant of Base64.
+-- @treturn string The encoded message.
+local function b64_encode_str(message, variant)
 	variant = variant or b64_original
-	assert(type(message) == "string" or type(message_len) == "number",
-	       "'message' wasn't a Lua string but 'message_len' wasn't a " ..
-	       "valid length")
-	if type(message) == "string" and not message_len then
-		message_len = message:len()
-	end
+	assert(type(message) == "string", "'message' wasn't a string")
+	
+	-- We don't have to write an assert for 'variant' being a number
+	--   because b64_len already has one. ;)
+	local encoded_len = b64_len(message:len(), variant)
+	local encoded_msg = sod_gc("unsigned char * const", encoded_len)
+	sodium.sodium_bin2base64(encoded_msg, encoded_len, message,
+	                         message:len(), variant)
+	
+	return ffi.string(encoded_msg, encoded_len)
+end
+
+--- Encodes a pointer's data into Base64.
+-- It uses libsodium to perform the encoding.
+-- @raise Throws if `variant` isn't a variant.
+-- @tparam pointer message The message to encode.
+-- @tparam int message_len The length of the message in bytes.
+-- @tparam[opt=b64_original] variant variant The variant of Base64.
+-- @treturn string The encoded message.
+local function b64_encode_ptr(message, message_len, variant)
+	variant = variant or b64_original
+	assert(type(message_len) == "number", "'message_len' wasn't a number")
 	
 	-- We don't have to write an assert for 'variant' being a number
 	--   because b64_len already has one. ;)
@@ -186,7 +257,7 @@ local function b64_encode(message, message_len, variant)
 	return ffi.string(encoded_msg, encoded_len)
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Keypair setup
 
 -- Our public and secret keys.
@@ -224,22 +295,26 @@ if _G.crypto_lib_print then
 	print("Generated keypair from seed.")
 
 	-- Print the Base64 of the public key.
-	print("Public key (Base64): " .. b64_encode(pk, sign_pkbytes))
+	print("Public key (Base64): " .. b64_encode_ptr(pk, sign_pkbytes))
 end
 
--------------------------------------------------------------------------------
--- Signing setup
+--------------------------------------------------------------------------------
 
+--- The crypto library public interface.
+-- @section crypto
 local _M = {}
 local ull_size = ffi.sizeof(ffi.new("unsigned long long", 0))
 
--------------------------------------------------------------------------------
--- Ed25519ph state object for high-level multipart signing
+--------------------------------------------------------------------------------
 
 -- If it starts with "__", it's meant for private usage, as usual.
 local sign_state_mt = {}
 -- Prototypes and default values
+--- The prototype functions of @{sign_state}.
+-- @table
+-- @within sign_state
 local sign_state_proto = {}
+
 -- !!! PRIVATE STUFF !!!
 -- Allows for a prototype.
 sign_state_mt.__index = sign_state_proto
@@ -255,12 +330,17 @@ function sign_state_mt.__newindex(self, k, v)
 	end
 end
 
--- Just a non-nil value to hold the place of the state.
+-- A pointer to the underlying libsodium state that @{sign_state} abstracts.
 sign_state_proto.__state = 1
 -- A value describing whether the state is initialized.
 sign_state_proto.__state_is_init = false
 
--- Creates and initializes new state object.
+--- Ed25519ph state objects for high-level multipart signing
+-- @type sign_state
+
+--- Resets the object's state.
+-- @lfunction __new_state
+-- @treturn nil
 function sign_state_proto.__new_state(self)
 	self.__state = sod_gc("struct crypto_sign_ed25519ph_state *",
 	                      sign_statebytes)
@@ -272,8 +352,10 @@ function sign_state_proto.__new_state(self)
 	self.__state_is_init = true
 end
 
--- Updates the state object with some text.
+--- Updates the state object with some text.
 -- self.__state must be initialized and created and not finalized.
+-- @lfunction __upd_state
+-- @treturn nil
 function sign_state_proto.__upd_state(self, message)
 	assert(type(message) == "string",
 	       "Got a " .. type(message) .. ", need a string")
@@ -289,8 +371,10 @@ function sign_state_proto.__upd_state(self, message)
 	assert(success == 0, "Failed to update signing object.")
 end
 
--- Finalizes the state object and returns the signature.
+--- Finalizes the state object and returns the signature.
 -- self.__state must be initialized and created and not finalized.
+-- @lfunction __fin_state
+-- @treturn string The signature of the state.
 function sign_state_proto.__fin_state(self)
 	assert(self.__state_is_init,
 	       "State attempted finalization but isn't initialized")
@@ -319,9 +403,13 @@ function sign_state_proto.__fin_state(self)
 	return ffi.string(sig, length)
 end
 
--- Given a Lua string signature 'sig' that is 'sign_bytes' long, returns whether
---   the public key used in the object and the signature verify the text that
---   has been inserted into the object. The object will require re-init.
+--- Verifies a signature against the object, finalizing it.
+-- Given a Lua string signature that is 64 long, returns whether the public key
+-- used in the object and the signature verify the text that has been inserted
+-- into the object. The object will require re-init.
+-- @lfunction __ver_state
+-- @tparam string sig The signature to verify.
+-- @treturn bool `true` if it verifies successfully, `false` otherwise.
 function sign_state_proto.__ver_state(self, sig)
 	assert(type(sig) == "string", "'sig' must be a string, but is a '" ..
 	       type(sig) .. "'")
@@ -342,15 +430,22 @@ end
 
 -- !!! PUBLIC STUFF !!!
 
--- Returns whether the state is initialized.
+--- Returns whether the object is initialized.
+-- @function is_initialized
+-- @treturn bool `true` for initialized, `false` otherwise.
+-- @see initialize
 function sign_state_proto.is_initialized(self)
 	return self.__is_state_init
 end
--- An alias for the above function.
+--- An alias for @{is_initialized}
+-- @function is_init
+-- @treturn bool
 sign_state_proto.is_init = sign_state_proto.is_initialized
 
--- Returns the object with the state initialized. DOES NOT COPY. If the state
---   is already initialized, it doesn't reset it.
+--- Initializes the object and returns it.
+-- If the state is already initialized, it does nothing it.
+-- @function initialize
+-- @treturn sign_state `self`
 function sign_state_proto.initialize(self)
 	if not self:is_initialized() then
 		self:__new_state()
@@ -358,37 +453,54 @@ function sign_state_proto.initialize(self)
 
 	return self
 end
--- An alias for the above function.
+--- An alias for @{initialize}.
+-- @function init
+-- @treturn sign_state
 sign_state_proto.init = sign_state_proto.initialize
 
--- Returns the object with the state force-initialized. DOES NOT COPY.
+--- Forcefully initializes the object, wiping its state, and returns it.
+-- @function reset
+-- @treturn sign_state `self`
+-- @see initialize, is_initialized
 function sign_state_proto.reset(self)
 	self:__new_state()
 	
 	return self
 end
 
--- Returns the object with the state updated to have new text inserted. DOES
---   NOT COPY.
+--- Inserts a message into its state and returns the object.
+-- @function insert
+-- @raise Throws if `message` isn't a string.
+-- @tparam string message The message to insert.
+-- @treturn sign_state `self`
 function sign_state_proto.insert(self, message)
 	self:__upd_state(message)
 	
 	return self
 end
 
--- Returns the signature of the object. Automatically reinitializes it.
+
+--- Returns the signature of the state and resets it.
+-- @function get_signature
+-- @treturn string The Ed25519ph of the contents.
+-- @see verify
 function sign_state_proto.get_signature(self)
 	local result = self:__fin_state()
 	self:init()
 	
 	return result
 end
--- An alias for the above function.
+--- An alias for @{get_signature}.
+-- @function sign
+-- @treturn string
 sign_state_proto.sign = sign_state_proto.get_signature
 
--- Given a Lua string signature 'sig' that is 'sign_bytes' long, returns whether
---   the public key used in the object and the signature verify the text that
---   has been inserted into the object. Automatically reinitializes the object.
+--- Given a signature string, returns whether the state verifies it.
+-- The signature string must be 64 bytes long and have been made using one of
+-- the @{sign_state} objects. Resets the state after.
+-- @function verify
+-- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
+-- @treturn bool `true` if it's verified, `false` otherwise.
 function sign_state_proto.verify(self, sig)
 	local result = self:__ver_state(sig)
 	self:init()
@@ -396,15 +508,23 @@ function sign_state_proto.verify(self, sig)
 	return result
 end
 
--- Constructor for the high-level signing object. Automatically initializes it.
+--- Constructor for the high-level signing object. 
+-- Automatically initializes it.
+-- @within crypto
+-- @treturn sign_state
+-- @see sign_state
 function _M.new_sign_object()
 	return setmetatable({}, sign_state_mt):init()
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Signing functions
 
--- Returns the signature of a message.
+--- Returns the signature of a message.
+-- Gives a different result than Ed25519ph signing, as this uses Ed25519.
+-- @within crypto
+-- @tparam string message The message to sign.
+-- @treturn string The 64 byte signature of `message`.
 function _M.sign(message)
 	-- message must be a string.
 	assert(type(message) == "string",
@@ -428,12 +548,14 @@ function _M.sign(message)
 	return ffi.string(sig, length)
 end
 
--- Returns the public key.
+--- Returns the public key.
+-- @within crypto
+-- @treturn string The 32 byte public key.
 function _M.get_pubkey()
 	return ffi.string(pk, sign_pkbytes)
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Goodbye!
 
 return _M
