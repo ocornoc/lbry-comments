@@ -502,6 +502,42 @@ function _M.claims.get_uri(claim_index)
 	end
 end
 
+-- Returns a table of data from the top-level comments on a claim, or nil and
+--   and error. If int_ind == true, then the indices in the data are integers
+--   rather than alphanumeric. int_ind is optional.
+function _M.claims.get_comments(claim_uri, int_ind)
+	-- We don't need to sanitize 'claim_uri' because get_data does.
+	local claim_data, err_msg = _M.claims.get_data(claim_uri)
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local claim_index = claim_data.claim_index
+	
+	if not claim_index or type(claim_index) ~= "number" then
+		return nil, "The stored data is weird, please report this bug!"
+	end
+	
+	local curs, err_msg = accouts:execute(
+	 "SELECT * FROM comments WHERE parent_com = NULL AND claim_index = " ..
+	 claim_index .. ";"
+	)
+	
+	if err_msg then
+		return nil, err_msg
+	end
+	
+	local results = {}
+	local com_data = {}
+	
+	repeat
+		table.insert(results, com_data)
+	until not curs:fetch(com_data, int_ind)
+	
+	return results
+end
+
 --------------------------------------------------------------------------------
 -- Comment interactions
 

@@ -246,6 +246,14 @@ describe("High-level SQLite Abstraction", function()
 			                 com2a_new.downvotes)
 		end)
 		
+		it("should be able to get all comments from a claim", function()
+			-- All test claims should have exactly one top-level
+			--   comment.
+			assert.is_equal(1, #db.claims.get_comments(url1))
+			assert.is_equal(1, #db.claims.get_comments(url2))
+			assert.is_equal(1, #db.claims.get_comments(url3))
+		end)
+		
 		pending("Need to check for comment deletion when parent " ..
 		        "claim is deleted")
 		pending "Need to implement edits"
