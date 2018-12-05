@@ -4,3 +4,4 @@ readme='README.md'
 title='LBRY Comments Documentation'
 boilerplate=true
 format='markdown'
+dir='docs'
