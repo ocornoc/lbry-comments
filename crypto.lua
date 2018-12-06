@@ -258,12 +258,11 @@ local function b64_encode_ptr(message, message_len, variant)
 end
 
 --------------------------------------------------------------------------------
--- Keypair setup
 
--- Our public and secret keys.
+--- Our public and secret keys.
 local pk = sod_gc("unsigned char *", sign_pkbytes)
 local sk = sod_gc("unsigned char *", sign_skbytes)
--- Our seed for the keypair generation.
+--- Our seed for the keypair generation.
 local kseed = sod_gc("unsigned char *", sign_seedbytes)
 
 -- Get the kseed file and copy the seed to kseed.
@@ -307,23 +306,24 @@ local ull_size = ffi.sizeof(ffi.new("unsigned long long", 0))
 
 --------------------------------------------------------------------------------
 
+--- Ed25519ph state objects for high-level multipart signing.
+-- @type sign_state
+
 -- If it starts with "__", it's meant for private usage, as usual.
 local sign_state_mt = {}
--- Prototypes and default values
 --- The prototype functions of @{sign_state}.
--- @table
--- @within sign_state
-local sign_state_proto = {}
+-- Prototypes and default values
+local sign_state = {}
 
 -- !!! PRIVATE STUFF !!!
 -- Allows for a prototype.
-sign_state_mt.__index = sign_state_proto
+sign_state_mt.__index = sign_state
 
 -- Disallows setting of values not in the prototype.
 function sign_state_mt.__newindex(self, k, v)
 	-- We check explicitly for nil rather than using truthiness because
 	--   the prototype value could be false.
-	if sign_state_proto[k] ~= nil then
+	if sign_state[k] ~= nil then
 		rawset(self, k, v)
 	else
 		error "You cannot arbitrarily set values in a sign object"
@@ -331,17 +331,14 @@ function sign_state_mt.__newindex(self, k, v)
 end
 
 -- A pointer to the underlying libsodium state that @{sign_state} abstracts.
-sign_state_proto.__state = 1
+sign_state.__state = 1
 -- A value describing whether the state is initialized.
-sign_state_proto.__state_is_init = false
-
---- Ed25519ph state objects for high-level multipart signing
--- @type sign_state
+sign_state.__state_is_init = false
 
 --- Resets the object's state.
 -- @lfunction __new_state
 -- @treturn nil
-function sign_state_proto.__new_state(self)
+function sign_state.__new_state(self)
 	self.__state = sod_gc("struct crypto_sign_ed25519ph_state *",
 	                      sign_statebytes)
 	
@@ -356,7 +353,7 @@ end
 -- self.__state must be initialized and created and not finalized.
 -- @lfunction __upd_state
 -- @treturn nil
-function sign_state_proto.__upd_state(self, message)
+function sign_state.__upd_state(self, message)
 	assert(type(message) == "string",
 	       "Got a " .. type(message) .. ", need a string")
 	assert(self.__state_is_init,
@@ -375,7 +372,7 @@ end
 -- self.__state must be initialized and created and not finalized.
 -- @lfunction __fin_state
 -- @treturn string The signature of the state.
-function sign_state_proto.__fin_state(self)
+function sign_state.__fin_state(self)
 	assert(self.__state_is_init,
 	       "State attempted finalization but isn't initialized")
 	-- Allow our secret key to be read.
@@ -410,7 +407,7 @@ end
 -- @lfunction __ver_state
 -- @tparam string sig The signature to verify.
 -- @treturn bool `true` if it verifies successfully, `false` otherwise.
-function sign_state_proto.__ver_state(self, sig)
+function sign_state.__ver_state(self, sig)
 	assert(type(sig) == "string", "'sig' must be a string, but is a '" ..
 	       type(sig) .. "'")
 	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
@@ -434,19 +431,19 @@ end
 -- @function is_initialized
 -- @treturn bool `true` for initialized, `false` otherwise.
 -- @see initialize
-function sign_state_proto.is_initialized(self)
+function sign_state.is_initialized(self)
 	return self.__is_state_init
 end
 --- An alias for @{is_initialized}
 -- @function is_init
 -- @treturn bool
-sign_state_proto.is_init = sign_state_proto.is_initialized
+sign_state.is_init = sign_state.is_initialized
 
 --- Initializes the object and returns it.
 -- If the state is already initialized, it does nothing it.
 -- @function initialize
 -- @treturn sign_state `self`
-function sign_state_proto.initialize(self)
+function sign_state.initialize(self)
 	if not self:is_initialized() then
 		self:__new_state()
 	end
@@ -456,13 +453,13 @@ end
 --- An alias for @{initialize}.
 -- @function init
 -- @treturn sign_state
-sign_state_proto.init = sign_state_proto.initialize
+sign_state.init = sign_state.initialize
 
 --- Forcefully initializes the object, wiping its state, and returns it.
 -- @function reset
 -- @treturn sign_state `self`
 -- @see initialize, is_initialized
-function sign_state_proto.reset(self)
+function sign_state.reset(self)
 	self:__new_state()
 	
 	return self
@@ -473,7 +470,7 @@ end
 -- @raise Throws if `message` isn't a string.
 -- @tparam string message The message to insert.
 -- @treturn sign_state `self`
-function sign_state_proto.insert(self, message)
+function sign_state.insert(self, message)
 	self:__upd_state(message)
 	
 	return self
@@ -484,16 +481,16 @@ end
 -- @function get_signature
 -- @treturn string The Ed25519ph of the contents.
 -- @see verify
-function sign_state_proto.get_signature(self)
+function sign_state.get_signature(self)
 	local result = self:__fin_state()
 	self:init()
 	
 	return result
 end
 --- An alias for @{get_signature}.
--- @function sign
+-- @function get_sig
 -- @treturn string
-sign_state_proto.sign = sign_state_proto.get_signature
+sign_state.get_sig = sign_state.get_signature
 
 --- Given a signature string, returns whether the state verifies it.
 -- The signature string must be 64 bytes long and have been made using one of
@@ -501,31 +498,32 @@ sign_state_proto.sign = sign_state_proto.get_signature
 -- @function verify
 -- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
 -- @treturn bool `true` if it's verified, `false` otherwise.
-function sign_state_proto.verify(self, sig)
+function sign_state.verify(self, sig)
 	local result = self:__ver_state(sig)
 	self:init()
 	
 	return result
 end
 
+--- The Public Interface
+-- @section crypto
+
 --- Constructor for the high-level signing object. 
 -- Automatically initializes it.
--- @within crypto
+-- @function new_sign_object
 -- @treturn sign_state
--- @see sign_state
 function _M.new_sign_object()
 	return setmetatable({}, sign_state_mt):init()
 end
 
 --------------------------------------------------------------------------------
--- Signing functions
 
 --- Returns the signature of a message.
 -- Gives a different result than Ed25519ph signing, as this uses Ed25519.
--- @within crypto
+-- @function get_sig
 -- @tparam string message The message to sign.
 -- @treturn string The 64 byte signature of `message`.
-function _M.sign(message)
+function _M.get_sig(message)
 	-- message must be a string.
 	assert(type(message) == "string",
 	       "Got a " .. type(message) .. ", need a string")
@@ -549,13 +547,11 @@ function _M.sign(message)
 end
 
 --- Returns the public key.
--- @within crypto
 -- @treturn string The 32 byte public key.
 function _M.get_pubkey()
 	return ffi.string(pk, sign_pkbytes)
 end
 
 --------------------------------------------------------------------------------
--- Goodbye!
 
 return _M
