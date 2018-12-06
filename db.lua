@@ -1,4 +1,4 @@
---[[--
+--[[
 This file is part of LBRY-Comments.
 
 LBRY-Comments provides a simple network database for commenting.
@@ -16,7 +16,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
---]]--
+]]
 
 local sql_driver = require "luasql.sqlite3"
 local crypto = require "crypto"
