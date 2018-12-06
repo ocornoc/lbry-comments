@@ -121,10 +121,14 @@ assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
 -- @section padding
 -- @local
 
---- This is a very basic zeropadding function. It won't truncate the result.
+--- This is a very basic zeropadding function.
+-- This function will *not* truncate the result if `to_len` is smaller than the
+-- length of `str`.
 -- @tparam string str The string to zeropad.
 -- @tparam number to_len The length to pad to.
 -- @treturn string The input zeropadded to `to_len`.
+-- @usage zeropad_loose("hello", 7) --> "hello\0\0"
+-- @usage zeropad_loose("hello", 4) --> "hello"
 local function zeropad_loose(str, to_len)
 	local pad_needed = to_len - str:len()
 	
@@ -135,10 +139,14 @@ local function zeropad_loose(str, to_len)
 	end
 end
 
---- This is a very basic zero-padding function. It truncates the result.
+--- This is a very basic zero-padding function.
+-- This function *will* truncate the result if `to_len` is smaller than the
+-- length of `str`.
 -- @tparam string str The string to zeropad.
 -- @tparam number to_len The length to pad to.
 -- @treturn string The input zeropadded to `to_len`.
+-- @usage zeropad_strict("hello", 7) --> "hello\0\0"
+-- @usage zeropad_strict("hello", 4) --> "hell"
 local function zeropad_strict(str, to_len)
 	local pad_needed = to_len - str:len()
 	
@@ -159,10 +167,11 @@ end
 --- Uses sodium's malloc in order to safely allocate C objects.
 -- Returns a pointer of type `p_type` of size `size`.
 -- @warning It doesn't check if the allocation failed.
--- @see sod_gc
 -- @tparam string p_type The C type of the pointer.
 -- @tparam int size The size of the data being pointed to, in bytes.
 -- @treturn pointer A garbage-collected pointer.
+-- @see sod_gc
+-- @usage sod_unsafe_gc("const char *", 20)
 local function sod_unsafe_gc(p_type, size)
 	local new_p = ffi.new(p_type, sodium.sodium_malloc(size))
 	ffi.gc(new_p, sodium.sodium_free)
@@ -176,6 +185,7 @@ end
 -- @tparam string p_type The C type of the pointer.
 -- @tparam int size The size of the data being pointed to, in bytes.
 -- @treturn pointer A safe garbage-collected pointer.
+-- @usage sod_gc("const char *", 20)
 local function sod_gc(p_type, size)
 	local new_p = sod_unsafe_gc(p_type, size)
 	assert(tonumber(new_p) ~= 0, "Failed to allocate pointer of type '" ..
@@ -205,6 +215,8 @@ local b64_urlsafe_np   = 7
 -- @tparam[opt=b64_original] variant variant The Base64 variant to use.
 -- @treturn int The amount of bytes required to store the encoded input.
 -- @see b64_original, b64_original_np, b64_urlsafe, b64_urlsafe_np
+-- @usage b64_len(("hello"):len(), b64_urlsafe) --> 9
+-- @usage b64_len(30) --> 41
 local function b64_len(size, variant)
 	variant = variant or b64_original
 	assert(type(variant) == "number",
@@ -222,6 +234,8 @@ end
 -- @tparam string message The message to encode.
 -- @tparam[opt=b64_original] variant variant The variant of Base64.
 -- @treturn string The encoded message.
+-- @usage b64_encode_str("sup dog", b64_urlsafe_np) --> "c3VwIGRvZw"
+-- @usage b64_encode_str("hello") --> "aGVsbG8="
 local function b64_encode_str(message, variant)
 	variant = variant or b64_original
 	assert(type(message) == "string", "'message' wasn't a string")
@@ -243,6 +257,7 @@ end
 -- @tparam int message_len The length of the message in bytes.
 -- @tparam[opt=b64_original] variant variant The variant of Base64.
 -- @treturn string The encoded message.
+-- @usage b64_encode_ptr(my_pointer, data_len, b64_original_np)
 local function b64_encode_ptr(message, message_len, variant)
 	variant = variant or b64_original
 	assert(type(message_len) == "number", "'message_len' wasn't a number")
@@ -258,12 +273,20 @@ local function b64_encode_ptr(message, message_len, variant)
 end
 
 --------------------------------------------------------------------------------
--- Keypair setup
 
--- Our public and secret keys.
+--- The public key.
+-- This is protected as read-only using libsodium's secure memory.
+-- @within Constants
 local pk = sod_gc("unsigned char *", sign_pkbytes)
+--- The secret key.
+-- This is protected as no-access using libsodium's secure memory. Rarely, in
+-- functions that need it, it is briefly read-only.
+-- @within Constants
 local sk = sod_gc("unsigned char *", sign_skbytes)
--- Our seed for the keypair generation.
+--- Our seed for the keypair generation.
+-- This is protected as no-access using libsodium's secure memory. Rarely, in
+-- functions that need it, it is briefly read-only.
+-- @within Constants
 local kseed = sod_gc("unsigned char *", sign_seedbytes)
 
 -- Get the kseed file and copy the seed to kseed.
@@ -307,23 +330,24 @@ local ull_size = ffi.sizeof(ffi.new("unsigned long long", 0))
 
 --------------------------------------------------------------------------------
 
+--- Ed25519ph state objects for high-level multipart signing.
+-- @type sign_state
+-- @alias sign_state
+
+local sign_state = {}
+
 -- If it starts with "__", it's meant for private usage, as usual.
 local sign_state_mt = {}
--- Prototypes and default values
---- The prototype functions of @{sign_state}.
--- @table
--- @within sign_state
-local sign_state_proto = {}
 
 -- !!! PRIVATE STUFF !!!
 -- Allows for a prototype.
-sign_state_mt.__index = sign_state_proto
+sign_state_mt.__index = sign_state
 
 -- Disallows setting of values not in the prototype.
 function sign_state_mt.__newindex(self, k, v)
 	-- We check explicitly for nil rather than using truthiness because
 	--   the prototype value could be false.
-	if sign_state_proto[k] ~= nil then
+	if sign_state[k] ~= nil then
 		rawset(self, k, v)
 	else
 		error "You cannot arbitrarily set values in a sign object"
@@ -331,17 +355,15 @@ function sign_state_mt.__newindex(self, k, v)
 end
 
 -- A pointer to the underlying libsodium state that @{sign_state} abstracts.
-sign_state_proto.__state = 1
+sign_state.__state = 1
 -- A value describing whether the state is initialized.
-sign_state_proto.__state_is_init = false
-
---- Ed25519ph state objects for high-level multipart signing
--- @type sign_state
+sign_state.__state_is_init = false
 
 --- Resets the object's state.
 -- @lfunction __new_state
 -- @treturn nil
-function sign_state_proto.__new_state(self)
+-- @usage sign_obj:__new_state()
+function sign_state.__new_state(self)
 	self.__state = sod_gc("struct crypto_sign_ed25519ph_state *",
 	                      sign_statebytes)
 	
@@ -354,9 +376,11 @@ end
 
 --- Updates the state object with some text.
 -- self.__state must be initialized and created and not finalized.
+-- @tparam string message The text to insert.
 -- @lfunction __upd_state
 -- @treturn nil
-function sign_state_proto.__upd_state(self, message)
+-- @usage sign_obj:__upd_state("hello")
+function sign_state.__upd_state(self, message)
 	assert(type(message) == "string",
 	       "Got a " .. type(message) .. ", need a string")
 	assert(self.__state_is_init,
@@ -375,7 +399,8 @@ end
 -- self.__state must be initialized and created and not finalized.
 -- @lfunction __fin_state
 -- @treturn string The signature of the state.
-function sign_state_proto.__fin_state(self)
+-- @usage sign_obj:__fin_state()
+function sign_state.__fin_state(self)
 	assert(self.__state_is_init,
 	       "State attempted finalization but isn't initialized")
 	-- Allow our secret key to be read.
@@ -410,7 +435,8 @@ end
 -- @lfunction __ver_state
 -- @tparam string sig The signature to verify.
 -- @treturn bool `true` if it verifies successfully, `false` otherwise.
-function sign_state_proto.__ver_state(self, sig)
+-- @usage sign_obj:__ver_state(my_sig)
+function sign_state.__ver_state(self, sig)
 	assert(type(sig) == "string", "'sig' must be a string, but is a '" ..
 	       type(sig) .. "'")
 	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
@@ -434,19 +460,21 @@ end
 -- @function is_initialized
 -- @treturn bool `true` for initialized, `false` otherwise.
 -- @see initialize
-function sign_state_proto.is_initialized(self)
+-- @usage crypto.new_sign_object():is_initialized() --> true
+function sign_state.is_initialized(self)
 	return self.__is_state_init
 end
 --- An alias for @{is_initialized}
 -- @function is_init
 -- @treturn bool
-sign_state_proto.is_init = sign_state_proto.is_initialized
+sign_state.is_init = sign_state.is_initialized
 
 --- Initializes the object and returns it.
 -- If the state is already initialized, it does nothing it.
 -- @function initialize
 -- @treturn sign_state `self`
-function sign_state_proto.initialize(self)
+-- @usage sign_obj:initialize()
+function sign_state.initialize(self)
 	if not self:is_initialized() then
 		self:__new_state()
 	end
@@ -456,13 +484,14 @@ end
 --- An alias for @{initialize}.
 -- @function init
 -- @treturn sign_state
-sign_state_proto.init = sign_state_proto.initialize
+sign_state.init = sign_state.initialize
 
 --- Forcefully initializes the object, wiping its state, and returns it.
 -- @function reset
 -- @treturn sign_state `self`
 -- @see initialize, is_initialized
-function sign_state_proto.reset(self)
+-- @usage sign_obj:insert("hello?"):reset()
+function sign_state.reset(self)
 	self:__new_state()
 	
 	return self
@@ -473,7 +502,8 @@ end
 -- @raise Throws if `message` isn't a string.
 -- @tparam string message The message to insert.
 -- @treturn sign_state `self`
-function sign_state_proto.insert(self, message)
+-- @usage sign_obj:insert("sup dawg")
+function sign_state.insert(self, message)
 	self:__upd_state(message)
 	
 	return self
@@ -484,16 +514,17 @@ end
 -- @function get_signature
 -- @treturn string The Ed25519ph of the contents.
 -- @see verify
-function sign_state_proto.get_signature(self)
+-- @usage sign_obj:reset():insert("get my signature"):get_signature()
+function sign_state.get_signature(self)
 	local result = self:__fin_state()
 	self:init()
 	
 	return result
 end
 --- An alias for @{get_signature}.
--- @function sign
+-- @function get_sig
 -- @treturn string
-sign_state_proto.sign = sign_state_proto.get_signature
+sign_state.get_sig = sign_state.get_signature
 
 --- Given a signature string, returns whether the state verifies it.
 -- The signature string must be 64 bytes long and have been made using one of
@@ -501,31 +532,36 @@ sign_state_proto.sign = sign_state_proto.get_signature
 -- @function verify
 -- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
 -- @treturn bool `true` if it's verified, `false` otherwise.
-function sign_state_proto.verify(self, sig)
+-- @see get_signature
+-- @usage sign_obj:insert("verify me"):verify(past_signature)
+function sign_state.verify(self, sig)
 	local result = self:__ver_state(sig)
 	self:init()
 	
 	return result
 end
 
+--- The Public Interface
+-- @section crypto
+
 --- Constructor for the high-level signing object. 
 -- Automatically initializes it.
--- @within crypto
+-- @function new_sign_object
 -- @treturn sign_state
--- @see sign_state
+-- @usage crypto.new_sign_object()
 function _M.new_sign_object()
 	return setmetatable({}, sign_state_mt):init()
 end
 
 --------------------------------------------------------------------------------
--- Signing functions
 
 --- Returns the signature of a message.
 -- Gives a different result than Ed25519ph signing, as this uses Ed25519.
--- @within crypto
+-- @function get_sig
 -- @tparam string message The message to sign.
 -- @treturn string The 64 byte signature of `message`.
-function _M.sign(message)
+-- @usage crypto.get_sig("get my signature please")
+function _M.get_sig(message)
 	-- message must be a string.
 	assert(type(message) == "string",
 	       "Got a " .. type(message) .. ", need a string")
@@ -549,13 +585,12 @@ function _M.sign(message)
 end
 
 --- Returns the public key.
--- @within crypto
 -- @treturn string The 32 byte public key.
+-- @usage crypto.get_pubkey()
 function _M.get_pubkey()
 	return ffi.string(pk, sign_pkbytes)
 end
 
 --------------------------------------------------------------------------------
--- Goodbye!
 
 return _M

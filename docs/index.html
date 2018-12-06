@@ -30,7 +30,7 @@
 <h2>Contents</h2>
 <ul>
 <li><a href="#Class_sign_state">Class sign_state </a></li>
-<li><a href="#crypto">crypto</a></li>
+<li><a href="#The_Public_Interface">The Public Interface </a></li>
 </ul>
 
 
@@ -91,7 +91,7 @@
 	<td class="summary">Returns the signature of the state and resets it.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#sign_state:sign">sign_state:sign ()</a></td>
+	<td class="name" nowrap><a href="#sign_state:get_sig">sign_state:get_sig ()</a></td>
 	<td class="summary">An alias for <a href="index.html#sign_state:get_signature">get_signature</a>.</td>
 	</tr>
 	<tr>
@@ -99,14 +99,14 @@
 	<td class="summary">Given a signature string, returns whether the state verifies it.</td>
 	</tr>
 </table>
-<h2><a href="#crypto">crypto</a></h2>
+<h2><a href="#The_Public_Interface">The Public Interface </a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#new_sign_object">new_sign_object ()</a></td>
 	<td class="summary">Constructor for the high-level signing object.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#sign">sign (message)</a></td>
+	<td class="name" nowrap><a href="#get_sig">get_sig (message)</a></td>
 	<td class="summary">Returns the signature of a message.</td>
 	</tr>
 	<tr>
@@ -122,7 +122,7 @@
     <h2 class="section-header has-description"><a name="Class_sign_state"></a>Class sign_state </h2>
 
           <div class="section-description">
-          Ed25519ph state objects for high-level multipart signing
+          Ed25519ph state objects for high-level multipart signing.
           </div>
     <dl class="function">
     <dt>
@@ -147,6 +147,10 @@
          <a href="index.html#sign_state:initialize">initialize</a>
     </ul>
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">crypto.new_sign_object():is_initialized() <span class="comment">--&gt; true</span></pre>
+    </ul>
 
 </dd>
     <dt>
@@ -184,12 +188,16 @@
     <h3>Returns:</h3>
     <ol>
 
-           <span class="types"><a class="type" href="index.html#sign">sign_state</a></span>
+           <span class="types"><span class="type">sign_state</span></span>
         <code>self</code>
     </ol>
 
 
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sign_obj:initialize()</pre>
+    </ul>
 
 </dd>
     <dt>
@@ -204,7 +212,7 @@
     <h3>Returns:</h3>
     <ol>
 
-           <span class="types"><a class="type" href="index.html#sign">sign_state</a></span>
+           <span class="types"><span class="type">sign_state</span></span>
 
 
 
@@ -226,7 +234,7 @@
     <h3>Returns:</h3>
     <ol>
 
-           <span class="types"><a class="type" href="index.html#sign">sign_state</a></span>
+           <span class="types"><span class="type">sign_state</span></span>
         <code>self</code>
     </ol>
 
@@ -237,6 +245,10 @@
          <li><a href="index.html#sign_state:is_initialized">is_initialized</a></li>
     </ul>
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sign_obj:insert(<span class="string">"hello?"</span>):reset()</pre>
+    </ul>
 
 </dd>
     <dt>
@@ -258,7 +270,7 @@
     <h3>Returns:</h3>
     <ol>
 
-           <span class="types"><a class="type" href="index.html#sign">sign_state</a></span>
+           <span class="types"><span class="type">sign_state</span></span>
         <code>self</code>
     </ol>
 
@@ -266,6 +278,10 @@
     Throws if <code>message</code> isn't a string.
 
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sign_obj:insert(<span class="string">"sup dawg"</span>)</pre>
+    </ul>
 
 </dd>
     <dt>
@@ -290,11 +306,15 @@
          <a href="index.html#sign_state:verify">verify</a>
     </ul>
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sign_obj:reset():insert(<span class="string">"get my signature"</span>):get_signature()</pre>
+    </ul>
 
 </dd>
     <dt>
-    <a name = "sign_state:sign"></a>
-    <strong>sign_state:sign ()</strong>
+    <a name = "sign_state:get_sig"></a>
+    <strong>sign_state:get_sig ()</strong>
     </dt>
     <dd>
     An alias for <a href="index.html#sign_state:get_signature">get_signature</a>.
@@ -340,11 +360,19 @@
     </ol>
 
 
+    <h3>See also:</h3>
+    <ul>
+         <a href="index.html#sign_state:get_signature">get_signature</a>
+    </ul>
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sign_obj:insert(<span class="string">"verify me"</span>):verify(past_signature)</pre>
+    </ul>
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="crypto"></a>crypto</h2>
+    <h2 class="section-header "><a name="The_Public_Interface"></a>The Public Interface </h2>
 
     <dl class="function">
     <dt>
@@ -360,23 +388,23 @@
     <h3>Returns:</h3>
     <ol>
 
-           <span class="types"><a class="type" href="index.html#sign">sign_state</a></span>
+           <span class="types"><span class="type">sign_state</span></span>
 
 
 
     </ol>
 
 
-    <h3>See also:</h3>
-    <ul>
-         <a href="index.html#sign_state">sign_state</a>
-    </ul>
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">crypto.new_sign_object()</pre>
+    </ul>
 
 </dd>
     <dt>
-    <a name = "sign"></a>
-    <strong>sign (message)</strong>
+    <a name = "get_sig"></a>
+    <strong>get_sig (message)</strong>
     </dt>
     <dd>
     Returns the signature of a message.
@@ -400,6 +428,10 @@
 
 
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">crypto.get_sig(<span class="string">"get my signature please"</span>)</pre>
+    </ul>
 
 </dd>
     <dt>
@@ -420,6 +452,10 @@
 
 
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">crypto.get_pubkey()</pre>
+    </ul>
 
 </dd>
 </dl>
@@ -429,7 +465,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-12-05 14:13:13 </i>
+<i style="float:right;">Last updated 2018-12-06 08:30:17 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
