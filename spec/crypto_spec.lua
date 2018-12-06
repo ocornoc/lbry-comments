@@ -37,11 +37,11 @@ describe("crypto.lua", function()
 	
 	it("should be able to sign single strings", function()
 		-- Tests whether it returns anything.
-		assert.is_truthy(crypto.sign "Hello world")
+		assert.is_truthy(crypto.get_sig "Hello world")
 		-- Tests whether that anything is a string.
-		assert.is_equal("string", type(crypto.sign "*insert joke*"))
+		assert.is_equal("string", type(crypto.get_sig "*insert joke*"))
 		-- Tests whether the length of that string is 64 bytes.
-		assert.is_equal(64, crypto.sign("test string woo"):len())
+		assert.is_equal(64, crypto.get_sig("test string woo"):len())
 	end)
 	
 	it("should be able to sign multipart strings", function()
