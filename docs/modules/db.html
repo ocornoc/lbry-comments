@@ -1,0 +1,908 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>LBRY Comments Documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>LBRY Comments</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#db">db </a></li>
+<li><a href="#db_claims">db.claims </a></li>
+<li><a href="#db_comments">db.comments </a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/crypto.html">crypto</a></li>
+  <li><strong>db</strong></li>
+</ul>
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/README.md.html">README</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>db</code></h1>
+<p>A wrapper around SQLite3 providing the high-level interface of the backend.</p>
+<p>
+
+</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>Copyright</strong>: 2018 Grayson Burton and Oleg Silkin</li>
+        <li><strong>License</strong>: GNU AGPLv3</li>
+        <li><strong>Author</strong>: Grayson Burton</li>
+    </ul>
+
+
+<h2><a href="#db">db </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#is_running">is_running ()</a></td>
+	<td class="summary">Returns whether the database is running.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#stop">stop ()</a></td>
+	<td class="summary">Stops the database.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#start">start ()</a></td>
+	<td class="summary">Starts the database.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#restart">restart ()</a></td>
+	<td class="summary">Retarts the database.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#backup">backup ()</a></td>
+	<td class="summary">Creates a backup of the database.</td>
+	</tr>
+</table>
+<h2><a href="#db_claims">db.claims </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#new">new (claim_uri)</a></td>
+	<td class="summary">Inserts a new claim into the claims database.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_data">get_data (claim_uri[, int_ind=false])</a></td>
+	<td class="summary">Returns the data for a given claim.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#upvote">upvote (claim_uri[, times=1])</a></td>
+	<td class="summary">Upvotes a claim and returns the new total.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#downvote">downvote (claim_uri[, times=1])</a></td>
+	<td class="summary">Downvotes a claim and returns the new total.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_uri">get_uri (claim_index)</a></td>
+	<td class="summary">Returns the URI from a claim index.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_comments">get_comments (claim_uri[, int_ind=false])</a></td>
+	<td class="summary">Returns the TLCs for a claim.</td>
+	</tr>
+</table>
+<h2><a href="#db_comments">db.comments </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#new">new (claim_uri, poster, claim_uri)</a></td>
+	<td class="summary">Inserts a new TLC into the comments database.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#new_reply">new_reply (parent_id, poster, claim_uri)</a></td>
+	<td class="summary">Inserts a new reply into the comments database.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_data">get_data (comment_id[, int_ind=false])</a></td>
+	<td class="summary">Returns the data for a given comment.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_replies">get_replies (comment_id[, int_ind=false])</a></td>
+	<td class="summary">Returns the replies to a comment.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#upvote">upvote (comment_id[, times=1])</a></td>
+	<td class="summary">Upvotes a comment and returns the new total.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#downvote">downvote (comment_id[, times=1])</a></td>
+	<td class="summary">Downvotes a comment and returns the new total.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="db"></a>db </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "is_running"></a>
+    <strong>is_running ()</strong>
+    </dt>
+    <dd>
+    Returns whether the database is running.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+
+
+
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.is_running()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "stop"></a>
+    <strong>stop ()</strong>
+    </dt>
+    <dd>
+    Stops the database.
+ Will return an error if the database is already stopped.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        <code>true</code> on success.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/db.html#restart">restart</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.stop()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "start"></a>
+    <strong>start ()</strong>
+    </dt>
+    <dd>
+    Starts the database.
+ Will return an error if the database is already started.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        <code>true</code> on success.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/db.html#restart">restart</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.start()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "restart"></a>
+    <strong>restart ()</strong>
+    </dt>
+    <dd>
+    Retarts the database.
+ Will guaranteed put the database into a "running" state.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        <code>true</code> on success.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.restart()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "backup"></a>
+    <strong>backup ()</strong>
+    </dt>
+    <dd>
+    Creates a backup of the database.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        <code>true</code> on success.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.backup()</pre>
+    </ul>
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="db_claims"></a>db.claims </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "new"></a>
+    <strong>new (claim_uri)</strong>
+    </dt>
+    <dd>
+    Inserts a new claim into the claims database.
+ If the claim is already in the database, it doesn't error.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The permanent LBRY URI of the claim.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        <code>1</code> if it was added, <code>0</code> if it was already preset.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.claims.new(<span class="string">"lbry://cool_example"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_data"></a>
+    <strong>get_data (claim_uri[, int_ind=false])</strong>
+    </dt>
+    <dd>
+    Returns the data for a given claim.
+ If <code>int_ind == true</code>, then the data is an array rather than having
+ alphanumeric keys.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The permanent LBRY URI of the claim.
+        </li>
+        <li><span class="parameter">int_ind</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+         (<em>default</em> false)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        The data of the given claim.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.claims.get_data(<span class="string">"lbry://cool_example"</span>) <span class="comment">--&gt; table</span></pre></li>
+        <li><pre class="example">db.claims.get_data(<span class="string">"lbry://another_one"</span>, <span class="keyword">true</span>) <span class="comment">--&gt; table</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "upvote"></a>
+    <strong>upvote (claim_uri[, times=1])</strong>
+    </dt>
+    <dd>
+    Upvotes a claim and returns the new total.
+ If <code>times</code> isn't given, it defaults to <code>1</code>.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The permanent LBRY URI of the claim.
+        </li>
+        <li><span class="parameter">times</span>
+            <span class="types"><span class="type">int</span></span>
+         The amount of times to upvote.
+         (<em>default</em> 1)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The total amount of upvotes.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.claims.upvote(<span class="string">"lbry://cool_example"</span>) <span class="comment">--&gt; int</span></pre></li>
+        <li><pre class="example">db.claims.upvote(<span class="string">"lbry://cool_example"</span>, <span class="number">3</span>) <span class="comment">--&gt; int</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "downvote"></a>
+    <strong>downvote (claim_uri[, times=1])</strong>
+    </dt>
+    <dd>
+    Downvotes a claim and returns the new total.
+ If <code>times</code> isn't given, it defaults to <code>1</code>.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The permanent LBRY URI of the claim.
+        </li>
+        <li><span class="parameter">times</span>
+            <span class="types"><span class="type">int</span></span>
+         The amount of times to downvote.
+         (<em>default</em> 1)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The total amount of downvotes.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.claims.downvote(<span class="string">"lbry://cool_example"</span>) <span class="comment">--&gt; int</span></pre></li>
+        <li><pre class="example">db.claims.downvote(<span class="string">"lbry://cool_example"</span>, <span class="number">3</span>) <span class="comment">--&gt; int</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_uri"></a>
+    <strong>get_uri (claim_index)</strong>
+    </dt>
+    <dd>
+    Returns the URI from a claim index.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_index</span>
+            <span class="types"><span class="type">int</span></span>
+         The claim index.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The URI associated with the index.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.claims.downvote(<span class="number">20</span>) <span class="comment">--&gt; a LBRY URI</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_comments"></a>
+    <strong>get_comments (claim_uri[, int_ind=false])</strong>
+    </dt>
+    <dd>
+    Returns the TLCs for a claim.
+ A "TLC" is a "top-level comment", IE a comment that isn't a reply.
+ If <code>int_ind == true</code>, then each comment's data is an array rather than having
+ alphanumeric keys.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The permanent LBRY URI of the claim.
+        </li>
+        <li><span class="parameter">int_ind</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+         (<em>default</em> false)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        An array of comments' data.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.claims.get_comments(<span class="string">"lbry://cool_example"</span>) <span class="comment">--&gt; table</span></pre></li>
+        <li><pre class="example">db.claims.get_comments(<span class="string">"lbry://another_one"</span>, <span class="keyword">true</span>) <span class="comment">--&gt; table</span></pre></li>
+    </ul>
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="db_comments"></a>db.comments </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "new"></a>
+    <strong>new (claim_uri, poster, claim_uri)</strong>
+    </dt>
+    <dd>
+    Inserts a new TLC into the comments database.
+ A "TLC" is a "top-level comment", IE a comment that isn't a reply.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The message of the comment.
+        </li>
+        <li><span class="parameter">poster</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The name of the poster.
+        </li>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The message of the comment.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The comment ID now associated with this comment.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.comments.new(<span class="string">"lbry://cool_example"</span>, <span class="string">"my_username"</span>, <span class="string">"nice vid!"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "new_reply"></a>
+    <strong>new_reply (parent_id, poster, claim_uri)</strong>
+    </dt>
+    <dd>
+    Inserts a new reply into the comments database.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">parent_id</span>
+            <span class="types"><span class="type">int</span></span>
+         The ID of the comment that this is a reply to.
+        </li>
+        <li><span class="parameter">poster</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The name of the poster.
+        </li>
+        <li><span class="parameter">claim_uri</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The message of the comment.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The comment ID now associated with this comment.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">db.comments.reply(<span class="number">20</span>, <span class="string">"my_username"</span>, <span class="string">"funny! :)"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_data"></a>
+    <strong>get_data (comment_id[, int_ind=false])</strong>
+    </dt>
+    <dd>
+    Returns the data for a given comment.
+ If <code>int_ind == true</code>, then the data is an array rather than having
+ alphanumeric keys.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">comment_id</span>
+            <span class="types"><span class="type">int</span></span>
+         The ID of the comment to get data of.
+        </li>
+        <li><span class="parameter">int_ind</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+         (<em>default</em> false)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        The data of the given claim.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.comments.get_data(<span class="number">20</span>) <span class="comment">--&gt; table</span></pre></li>
+        <li><pre class="example">db.comments.get_data(<span class="number">21</span>, <span class="keyword">true</span>) <span class="comment">--&gt; table</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_replies"></a>
+    <strong>get_replies (comment_id[, int_ind=false])</strong>
+    </dt>
+    <dd>
+    Returns the replies to a comment.
+ If <code>int_ind == true</code>, then each comment's data is an array rather than having
+ alphanumeric keys.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">comment_id</span>
+            <span class="types"><span class="type">int</span></span>
+         The ID of the comment to get replies of.
+        </li>
+        <li><span class="parameter">int_ind</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+         (<em>default</em> false)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        An array of the replies' data.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.comments.get_replies(<span class="number">20</span>) <span class="comment">--&gt; table</span></pre></li>
+        <li><pre class="example">db.comments.get_replies(<span class="number">21</span>, <span class="keyword">true</span>) <span class="comment">--&gt; table</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "upvote"></a>
+    <strong>upvote (comment_id[, times=1])</strong>
+    </dt>
+    <dd>
+    Upvotes a comment and returns the new total.
+ If <code>times</code> isn't given, it defaults to <code>1</code>.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">comment_id</span>
+            <span class="types"><span class="type">int</span></span>
+         The ID of the comment to upvote.
+        </li>
+        <li><span class="parameter">times</span>
+            <span class="types"><span class="type">int</span></span>
+         The amount of times to upvote.
+         (<em>default</em> 1)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The total amount of upvotes.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.comments.upvote(<span class="number">20</span>) <span class="comment">--&gt; int</span></pre></li>
+        <li><pre class="example">db.comments.upvote(<span class="number">123</span>, <span class="number">3</span>) <span class="comment">--&gt; int</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "downvote"></a>
+    <strong>downvote (comment_id[, times=1])</strong>
+    </dt>
+    <dd>
+    Downvotes a comment and returns the new total.
+ If <code>times</code> isn't given, it defaults to <code>1</code>.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">comment_id</span>
+            <span class="types"><span class="type">int</span></span>
+         The ID of the comment to downvote.
+        </li>
+        <li><span class="parameter">times</span>
+            <span class="types"><span class="type">int</span></span>
+         The amount of times to downvote.
+         (<em>default</em> 1)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The total amount of downvotes.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">nil</span></span>
+        On error.</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        The error message.</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">db.comments.downvote(<span class="number">20</span>) <span class="comment">--&gt; int</span></pre></li>
+        <li><pre class="example">db.comments.downvote(<span class="number">123</span>, <span class="number">3</span>) <span class="comment">--&gt; int</span></pre></li>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2018-12-06 11:29:59 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

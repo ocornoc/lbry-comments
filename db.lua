@@ -18,41 +18,86 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local sql_driver = require "luasql.sqlite3"
-local crypto = require "crypto"
-local sql = sql_driver.sqlite3()
--- No networking components are actually used
-local sock = require "socket"
-local mime = require "mime"
-
--- Follows SemVer 2.0.0
--- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "0.0.0"
-
--- The path to the database, relative to the script.
-local db_path = "accoutrements.db"
+--------------------------------------------------------------------------------
+-- A wrapper around SQLite3 providing the high-level interface of the backend.
+-- @module db
+-- @alias _M
+-- @copyright 2018 Grayson Burton and Oleg Silkin
+-- @license GNU AGPLv3
+-- @author Grayson Burton
 
 --------------------------------------------------------------------------------
--- Helper functions
+-- Constants
+-- @section constants
+-- @local
 
--- Returns the UTC Unix Epoch time in seconds as an integer.
+--- Uses luasql.sqlite3.
+local sql_driver = require "luasql.sqlite3"
+--- Uses crypto.
+local crypto = require "crypto"
+--- @{sql_driver} requires this setup.
+-- No idea why to be honest, but whatever.
+local sql = sql_driver.sqlite3()
+--- Uses luasocket.
+-- No networking components are actually used, it's just for time.
+local sock = require "socket"
+--- Uses luasocket's MIME submodule.
+-- Used for its Base64 facilities.
+local mime = require "mime"
+
+--- Version of the API.
+-- Follows SemVer 2.0.0
+-- https://semver.org/spec/v2.0.0.html
+local DB_VERSION = "0.0.1"
+--- The path to the database, relative to the script.
+local db_path = "accoutrements.db"
+
+--- The UTC Unix Epoch time in seconds of the last backup's creation.
+local last_backup_time = 0
+--- The minimum amount of seconds between backups.
+-- This exists to put a hard stop to any form of backup spam, whether from
+-- internal error or external maliciousness.
+local minimum_backup_time = 3600
+
+--------------------------------------------------------------------------------
+-- Helper Functions
+-- @section helpers
+-- @local
+
+--- Returns the Epoch time.
+-- The time is the amount of seconds since the UTC Unix Epoch.
+-- @treturn int
+-- @usage get_unix_time()
 local function get_unix_time()
 	return math.floor(sock.gettime())
 end
 
--- Given a string, returns the Base64-encoded version of it.
+--- Encodes a string in Base64.
+-- @tparam string plain_str The string to encode.
+-- @treturn string The encoded input.
+-- @see b64_decode
+-- @usage b64_encode("hello") --> "aGVsbG8="
 local function b64_encode(plain_str)
 	return (mime.b64(plain_str))
 end
 
--- Given a Base64-encoded string, returns the plain version of it. The return
---   string is the largest section from the start of the input that can be
---   decoded. It stops at the first undecodable symbol(s).
+--- Decodes a Base64-encoded string.
+-- The return string is the largest section from the start of the input that
+-- can be decoded. It stops at the first undecodable symbol(s).
+-- @tparam string encoded_str The encoded input.
+-- @treturn string The decoded output.
+-- @see b64_encode
+-- @usage b64_decode("aGVsbG8=") --> "hello"
 local function b64_decode(encoded_str)
 	return (mime.unb64(encoded_str))
 end
 
--- Given a table, returns whether it is empty.
+--- Returns whether a table is empty.
+-- This also takes into account non-integer indices.
+-- @tparam table t The table to check.
+-- @treturn bool
+-- @usage is_empty_table({}) --> true
+-- @usage is_empty_table({5}) --> false
 local function is_empty_table(t)
 	for _,_ in pairs(t) do
 		return false
@@ -62,20 +107,38 @@ local function is_empty_table(t)
 end
 
 --------------------------------------------------------------------------------
--- Setting up connections and tables
+-- accouts
+-- @section accouts
+-- @local
 
+--- The connection to the database.
+-- It (and its fields) aren't Lua tables, but rather SQL tables. Usually, when
+-- a condition such as "must" is listed, it means that the SQL table is setup to
+-- throw a constraint error if that condition isn't satisfied. All entries
+-- should be considered `NOT NULL` (unable to be `null`) unless otherwise
+-- specified.
+-- @table accouts
+-- @local
+-- @field claims The table of claims.
+-- @field comments The table of comments.
+-- @field backups The table of backups.
 local accouts = assert(sql:connect(db_path))
 assert(accouts:setautocommit(true))
 
--- Contains all of the claims that have comments attached.
--- claim_index:   The index of the claim.
--- lbry_perm_uri: The permanent LBRY claim URI being represented. Includes the
---                  "lbry://". If a row with a non-unique URI is inserted, it is
---                  automatically ignored.
--- add_time:      An int representing the time of database addition. Count as
---                  UTC Unix Epoch seconds. Must be >= 0.
--- u/d votes:     All upvotes and downvotes for a claim. Both must be >= 0.
---                  Both default to 0.
+--- The table of claims.
+-- This contains all of the claims "tracked" in the database.
+-- @table accouts.claims
+-- @local
+-- @field claim_index An int holding the index of the claim.
+-- @field lbry_perm_uri The represented permanent LBRY claim's URI. Includes the
+-- "lbry://". If a row with a non-unique URI is inserted, it is silently ignored
+-- and treated as a no-op.
+-- @field add_time An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds. Must be >= 0.
+-- @field upvotes An int representing the amount of upvotes for that claim. Must
+-- be >= 0, defaults to 0.
+-- @field downvotes An int representing the amount of downvotes for that claim.
+-- Must be >= 0, defaults to 0.
 assert(accouts:execute[[
 CREATE TABLE IF NOT EXISTS claims (
 	claim_index   INTEGER PRIMARY KEY,
@@ -85,18 +148,33 @@ CREATE TABLE IF NOT EXISTS claims (
 	downvotes     INTEGER NOT NULL DEFAULT 0 CHECK (downvotes >= 0) );
 ]])
 
--- Contains all of the comments.
--- comm_index:  The index of the comment. Basically a unique identifier.
--- claim_index: The index of the claim (in claims) that the comment belongs to.
--- poster_name: The username or moniker used by the poster. Must not be "".
---                Defaults to "A Cool LBRYian".
--- parent_com:  The index of the comment that this is a reply to. If null, it
---                is not a reply.
--- post_time:   An int representing the time of posting. Counted as UTC Unix
---                Epoch seconds. Must be >= 0.
--- message:     The body of the comment. Must not be "".
--- u/d votes:   All upvotes and downvotes for the comment specifically. Both
---                must be >= 0. Both default to 0.
+--- The table of comments.
+-- This contains all of the comments in the database.
+-- @table accouts.comments
+-- @local
+-- @field comm_index An int holding the index of the comment.
+-- @field claim_index An int holding the index of the claims that this is a
+-- comment on. It must be a real claim index and will throw if it isn't. Also,
+-- when the claim that this comment is attached to is deleted or updated
+-- (moved), this value will change, too. If deletion, the comment will get
+-- automatically deleted.
+-- @field poster_name A string holding the name of the poster. Must not == ""
+-- and defaults to "A Cool LBRYian".
+-- @field parent_com A potentially-`null` int holding the index to another
+-- comment. If this field is `null`, then this comment is a "TLC" (top-level
+-- comment, a comment that isn't a reply). If it does holder a value, then the
+-- value is the index of the comment that this is a reply to. If the commen that
+-- is referenced in this value is updated (moved), then this value automatically
+-- updates to reflect that. If the parent comment is deleted, this reply is
+-- automatically deleted too.
+-- @field post_time An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds. Must be >= 0.
+-- @field message A string holding the body of the comment. Must not == "".
+-- @field upvotes An int representing the amount of upvotes for that comment.
+-- Must be >= 0, defaults to 0.
+-- @field downvotes An int representing the amount of downvotes for that
+-- comment. Must be >= 0, defaults to 0.
+-- @see accouts.claims
 assert(accouts:execute[[
 CREATE TABLE IF NOT EXISTS comments (
 	comm_index    INTEGER PRIMARY KEY,
@@ -109,19 +187,20 @@ CREATE TABLE IF NOT EXISTS comments (
 	downvotes     INTEGER NOT NULL DEFAULT 0 CHECK (downvotes >= 0) );
 ]])
 
--- Tracks all of the previous database backups.
--- backup_index:  The index of the backup. Unique.
--- creation_time: An int representing the time of creation. Counted as UTC Unix
---                  Epoch seconds. Must be >= 0.
--- totalcomments: An int representing the amount of comments stored up to and
---                  including that backup. Must be >= 0.
--- totalclaims:   An int representing the amount of claims stored up to and
---                  including that backup. Must be >= 0.
--- lbry_perm_uri: The permanent LBRY URI (including "lbry://") that the backup
---                  is uploaded to. Is unique. Aborts and screams in agony if
---                  you attempt to insert a row with the same URI.
--- size_kb:       An int representing the size of the backup in KiB (2^10),
---                  floored. Must be >= 0.
+--- Tracks all of the previous database backups.
+-- @table accouts.backups
+-- @local
+-- @field backup_index An int holding the index of the backup.
+-- @field creation_time An int representing the time of the row's insertion
+-- into the database, stored as UTC Epoch seconds. Must be >= 0.
+-- @field totalcomments An int representing the total number of comments in the
+-- backup. Must be >= 0.
+-- @field totalclaims An int representing the total number of claims in the
+-- backup. Must be >= 0.
+-- @field lbry_perm_uri A string holding the permanent LBRY URI of the claim
+-- that this backup is stored at. CURRENTLY DISABLED AND NOT STORED.
+-- @field size_kb An int representing the total size of the backup in KiB. The
+-- value is rounded up. Must be >= 0.
 assert(accouts:execute[[
 CREATE TABLE IF NOT EXISTS backups (
 	backup_index  INTEGER PRIMARY KEY,
@@ -132,17 +211,19 @@ CREATE TABLE IF NOT EXISTS backups (
 	size_kb       INTEGER NOT NULL CHECK (size_kb >= 0) );
 ]])
 
--- An escaped, Base64-encoded version of the public key.
+--- An escaped, Base64-encoded version of the public key.
+-- @within Constants
 local pubkey_b64 = accouts:escape(b64_encode(crypto:get_pubkey()))
--- The UTC Unix Epoch time in seconds of the last backup's creation.
-local last_backup_time = 0
--- The minimum amount of seconds between backups, as to prevent backup spam.
-local minimum_backup_time = 3600
 
 --------------------------------------------------------------------------------
--- Other helper functions
+-- Helper Functions
+-- @section helpers
+-- @local
 
--- Returns the number of claim rows, or nil and an error message.
+--- Returns the number of claims stored.
+-- @treturn[1] int The number of claims.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
 local function get_claim_num()
 	local curs, err_msg = accouts:execute[[
 	 SELECT COUNT(*) FROM claims;
@@ -158,7 +239,10 @@ local function get_claim_num()
 	return claim_count
 end
 
--- Returns the number of comments, or nil and an error message.
+--- Returns the number of comments stored.
+-- @treturn[1] int The number of comments.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
 local function get_comment_num()
 	local curs, err_msg = accouts:execute[[
 	 SELECT COUNT(*) FROM comments;
@@ -180,8 +264,11 @@ local function upload_backup(...)
 	return true
 end
 
--- Inserts a new backup into the backup table given the name and the backup size
---   in KiB. Returns 'true' on success or nil and an error message on failure.
+--- Inserts a new backup into @{accouts.backups}.
+-- @tparam int size The rounded-up size of the backup in KiB.
+-- @treturn[1] bool `true` on success.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
 local function new_backup_entry(size)
 	-- We need the count of all of the claims and comments in the database.
 	local claim_count, err_msg = get_claim_num()
@@ -205,7 +292,10 @@ local function new_backup_entry(size)
 	return not err_msg or nil, err_msg
 end
 
--- Returns the latest comment's ID or nil and an error message.
+--- Returns the ID of the latest comment in @{accouts.comments}.
+-- @treturn[1] int The comment ID
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
 local function get_latest_comment()
 	local curs, err_msg = accouts:execute[[
 	SELECT last_insert_rowid();
@@ -226,27 +316,36 @@ local function get_latest_comment()
 end
 
 --------------------------------------------------------------------------------
--- High-level interactions
+-- db
+-- @section db
 
--- All of these automatically sanitize their inputs automatically. Don't pre-
---   sanitize. All of these will return nil and an error message if there is
---   some failure.
-local _M = {_VERSION = DB_VERSION, claims = {}, comments = {}}
+local _M = {
+	_VERSION = DB_VERSION,
+	claims = {},
+	comments = {}
+}
 
 --------------------------------------------------------------------------------
--- Database interactions
 
--- A local variable determining if the database is running. If it isn't
---   runnning, most API functions will error.
+--- A boolean that is `true` only if @{accouts} is active.
+-- If it isn't `true`, many public functions will error.
+-- @local
 local running = true
 
--- Returns whether the database is running.
+--- Returns whether the database is running.
+-- @treturn bool
+-- @usage db.is_running()
 function _M.is_running()
 	return running
 end
 
--- Returns true if the database was stopped, nil and an error message
---   otherwise.
+--- Stops the database.
+-- Will return an error if the database is already stopped.
+-- @treturn[1] bool `true` on success.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @see restart
+-- @usage db.stop()
 function _M.stop()
 	if running then
 		local result, err_msg = accouts:close()
@@ -263,8 +362,13 @@ function _M.stop()
 	end
 end
 
--- Returns true if the database was started, nil and an error message
---   otherwise.
+--- Starts the database.
+-- Will return an error if the database is already started.
+-- @treturn[1] bool `true` on success.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @see restart
+-- @usage db.start()
 function _M.start()
 	if running then
 		return nil, "The database is already started"
@@ -276,8 +380,12 @@ function _M.start()
 	end
 end
 
--- Returns true if the database was restarted, nil and an error message
---   otherwise.
+--- Retarts the database.
+-- Will guaranteed put the database into a "running" state.
+-- @treturn[1] bool `true` on success.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.restart()
 function _M.restart()
 	if running then
 		local result, err_msg = _M.stop()
@@ -292,8 +400,11 @@ function _M.restart()
 	end
 end
 
--- Creates a backup of the database and 'true' if successful, otherwise nil and
---   an error message.
+--- Creates a backup of the database.
+-- @treturn[1] bool `true` on success.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.backup()
 function _M.backup()
 	local time = get_unix_time()
 	
@@ -366,12 +477,17 @@ function _M.backup()
 end
 
 --------------------------------------------------------------------------------
--- Claim interactions
+-- db.claims
+-- @section claims
 
--- Adds a claim to the "claims" SQL table. If the claim is already in the
---   database, this is a no-op. Returns 1 if the claim was added, 0 if the
---   claim was already present, or nil and an error string if there was a
---   problem.
+--- Inserts a new claim into the claims database.
+-- If the claim is already in the database, it doesn't error.
+-- @function new
+-- @tparam string claim_uri The permanent LBRY URI of the claim.
+-- @treturn[1] int `1` if it was added, `0` if it was already preset.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.claims.new("lbry://cool_example")
 function _M.claims.new(claim_uri)
 	return accouts:execute(
 	 "INSERT INTO claims (lbry_perm_uri, add_time) VALUES ('" ..
@@ -379,9 +495,17 @@ function _M.claims.new(claim_uri)
 	)
 end
 
--- Returns the data for the row containing a given claim URI. If int_ind ==
---   true, then the indices are integers rather than alphanumeric. int_ind is
---   optional.
+--- Returns the data for a given claim.
+-- If `int_ind == true`, then the data is an array rather than having
+-- alphanumeric keys.
+-- @function get_data
+-- @tparam string claim_uri The permanent LBRY URI of the claim.
+-- @tparam[opt=false] bool int_ind 
+-- @treturn[1] table The data of the given claim.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.claims.get_data("lbry://cool_example") --> table
+-- @usage db.claims.get_data("lbry://another_one", true) --> table
 function _M.claims.get_data(claim_uri, int_ind)
 	if type(claim_uri) ~= "string" then
 		return nil, "The claim URI needs to be a string, is a " ..
@@ -413,9 +537,16 @@ function _M.claims.get_data(claim_uri, int_ind)
 	end
 end
 
--- Adds a given amount of upvotes to the row containing the given claim URI. It
---   returns the final amount of upvotes. If the times to upvote isn't given, it
---   upvotes once. times must be an integer, and is optional.
+--- Upvotes a claim and returns the new total.
+-- If `times` isn't given, it defaults to `1`. 
+-- @function upvote
+-- @tparam string claim_uri The permanent LBRY URI of the claim.
+-- @tparam[opt=1] int times The amount of times to upvote.
+-- @treturn[1] int The total amount of upvotes.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.claims.upvote("lbry://cool_example") --> int
+-- @usage db.claims.upvote("lbry://cool_example", 3) --> int
 function _M.claims.upvote(claim_uri, times)
 	if times == nil then
 		times = 1
@@ -444,9 +575,16 @@ function _M.claims.upvote(claim_uri, times)
 	end
 end
 
--- Adds a given amount of downvotes to the row containing the given claim URI.
---   It returns the final amount of downvotes. If the times to downvote isn't
---   given, it downvotes once. times must be an integer, and is optional.
+--- Downvotes a claim and returns the new total.
+-- If `times` isn't given, it defaults to `1`. 
+-- @function downvote
+-- @tparam string claim_uri The permanent LBRY URI of the claim.
+-- @tparam[opt=1] int times The amount of times to downvote.
+-- @treturn[1] int The total amount of downvotes.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.claims.downvote("lbry://cool_example") --> int
+-- @usage db.claims.downvote("lbry://cool_example", 3) --> int
 function _M.claims.downvote(claim_uri, times)
 	if times == nil then
 		times = 1
@@ -476,8 +614,13 @@ function _M.claims.downvote(claim_uri, times)
 	end
 end
 
--- Given an index for a claim, returns the URI for it. If the index isn't found,
---   then nil and an error message are returned.
+--- Returns the URI from a claim index.
+-- @function get_uri
+-- @tparam int claim_index The claim index.
+-- @treturn[1] string The URI associated with the index.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.claims.downvote(20) --> a LBRY URI
 function _M.claims.get_uri(claim_index)
 	if type(claim_index) ~= "number" then
 		return nil, "'claim_index' must be a number"
@@ -502,9 +645,18 @@ function _M.claims.get_uri(claim_index)
 	end
 end
 
--- Returns a table of data from the top-level comments on a claim, or nil and
---   and error. If int_ind == true, then the indices in the data are integers
---   rather than alphanumeric. int_ind is optional.
+--- Returns the TLCs for a claim.
+-- A "TLC" is a "top-level comment", IE a comment that isn't a reply.
+-- If `int_ind == true`, then each comment's data is an array rather than having
+-- alphanumeric keys.
+-- @function get_comments
+-- @tparam string claim_uri The permanent LBRY URI of the claim.
+-- @tparam[opt=false] bool int_ind 
+-- @treturn[1] table An array of comments' data.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.claims.get_comments("lbry://cool_example") --> table
+-- @usage db.claims.get_comments("lbry://another_one", true) --> table
 function _M.claims.get_comments(claim_uri, int_ind)
 	-- We don't need to sanitize 'claim_uri' because get_data does.
 	local claim_data, err_msg = _M.claims.get_data(claim_uri)
@@ -539,13 +691,20 @@ function _M.claims.get_comments(claim_uri, int_ind)
 end
 
 --------------------------------------------------------------------------------
--- Comment interactions
+-- db.comments
+-- @section comments
 
--- Adds a comment to the "comments" SQL table. Requires a string 'claim_uri', a
---   string 'poster' (the name of the poster), and a message 'message' (the body
---   of the comment). Returns the ID on success and nil and an error message on
---   failure.
-function _M.comments.new(claim_uri, poster, message, parent_id)
+--- Inserts a new TLC into the comments database.
+-- A "TLC" is a "top-level comment", IE a comment that isn't a reply.
+-- @function new
+-- @tparam string claim_uri The permanent LBRY URI of the claim to comment on.
+-- @tparam string poster The name of the poster.
+-- @tparam string claim_uri The message of the comment.
+-- @treturn[1] int The comment ID now associated with this comment.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.comments.new("lbry://cool_example", "my_username", "nice vid!")
+function _M.comments.new(claim_uri, poster, message)
 	local claim_data, err_msg = _M.claims.get_data(claim_uri)
 	
 	-- If there is an error, 
@@ -560,7 +719,7 @@ function _M.comments.new(claim_uri, poster, message, parent_id)
 			-- Otherwise, retry now that you've created the claim.
 			else
 				return _M.comments.new(claim_uri, poster,
-				                       message, parent_id)
+				                       message)
 			end
 		-- Otherwise, just give up.
 		else
@@ -602,11 +761,15 @@ function _M.comments.new(claim_uri, poster, message, parent_id)
 	end
 end
 
--- Adds a comment reply to the "comments" SQL table. Requires a number
---   'parent_id' (the comment ID that this is a reply to), a string 'poster'
---   (the name of the poster), and a message 'message' (the body of the
---   comment). Returns the ID on success and nil and an error message on
---   failure.
+--- Inserts a new reply into the comments database.
+-- @function new_reply
+-- @tparam int parent_id The ID of the comment that this is a reply to.
+-- @tparam string poster The name of the poster.
+-- @tparam string claim_uri The message of the comment.
+-- @treturn[1] int The comment ID now associated with this comment.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.comments.reply(20, "my_username", "funny! :)")
 function _M.comments.new_reply(parent_id, poster, message)
 	-- We don't need to sanitize 'parent_id' because get_data does for us.
 	local parent_data, err_msg = _M.comments.get_data(parent_id)
@@ -650,9 +813,17 @@ function _M.comments.new_reply(parent_id, poster, message)
 	end
 end
 
--- Returns the data for the row containing a given comment ID. If int_ind ==
---   true, then the indices are integers rather than alphanumeric. int_ind is
---   optional.
+--- Returns the data for a given comment.
+-- If `int_ind == true`, then the data is an array rather than having
+-- alphanumeric keys.
+-- @function get_data
+-- @tparam int comment_id The ID of the comment to get data of.
+-- @tparam[opt=false] bool int_ind 
+-- @treturn[1] table The data of the given claim.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.comments.get_data(20) --> table
+-- @usage db.comments.get_data(21, true) --> table
 function _M.comments.get_data(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
 		return nil, "'comment_id' must be a number"
@@ -681,9 +852,17 @@ function _M.comments.get_data(comment_id, int_ind)
 	end
 end
 
--- Returns an array containing the data for all of the replies to the comment
---   with ID 'comment_id'. If int_ind == true, then the indices of the data are
---   integers rather than alphanumeric. int_ind is optional.
+--- Returns the replies to a comment.
+-- If `int_ind == true`, then each comment's data is an array rather than having
+-- alphanumeric keys.
+-- @function get_replies
+-- @tparam int comment_id The ID of the comment to get replies of.
+-- @tparam[opt=false] bool int_ind
+-- @treturn[1] table An array of the replies' data.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.comments.get_replies(20) --> table
+-- @usage db.comments.get_replies(21, true) --> table
 function _M.comments.get_replies(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
 		return nil, "'comment_id' must be a number"
@@ -721,9 +900,16 @@ function _M.comments.get_replies(comment_id, int_ind)
 	return results
 end
 
--- Adds a given amount of upvotes to the row containing the given comment ID. It
---   returns the final amount of upvotes. If the times to upvote isn't given,
---   the function upvotes once. times must be an integer, and is optional.
+--- Upvotes a comment and returns the new total.
+-- If `times` isn't given, it defaults to `1`. 
+-- @function upvote
+-- @tparam int comment_id The ID of the comment to upvote.
+-- @tparam[opt=1] int times The amount of times to upvote.
+-- @treturn[1] int The total amount of upvotes.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.comments.upvote(20) --> int
+-- @usage db.comments.upvote(123, 3) --> int
 function _M.comments.upvote(comment_id, times)
 	if times == nil then
 		times = 1
@@ -757,9 +943,16 @@ function _M.comments.upvote(comment_id, times)
 	end
 end
 
--- Adds a given amount of downvotes to the row containing the given comment ID.
---   It returns the final amount of downvotes. If the times to downvote isn't
---   given, it downvotes once. times must be an integer, and is optional.
+--- Downvotes a comment and returns the new total.
+-- If `times` isn't given, it defaults to `1`. 
+-- @function downvote
+-- @tparam int comment_id The ID of the comment to downvote.
+-- @tparam[opt=1] int times The amount of times to downvote.
+-- @treturn[1] int The total amount of downvotes.
+-- @treturn[2] nil On error.
+-- @treturn[2] string The error message.
+-- @usage db.comments.downvote(20) --> int
+-- @usage db.comments.downvote(123, 3) --> int
 function _M.comments.downvote(comment_id, times)
 	if times == nil then
 		times = 1
@@ -795,6 +988,5 @@ function _M.comments.downvote(comment_id, times)
 end
 
 --------------------------------------------------------------------------------
--- Goodbye!
 
 return _M

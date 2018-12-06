@@ -27,16 +27,12 @@
 <h1>LBRY Comments</h1>
 
 
-<h2>Contents</h2>
-<ul>
-<li><a href="#Class_sign_state">Class sign_state </a></li>
-<li><a href="#The_Public_Interface">The Public Interface </a></li>
-</ul>
 
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><strong>crypto</strong></li>
+  <li><a href="modules/crypto.html">crypto</a></li>
+  <li><a href="modules/db.html">db</a></li>
 </ul>
 <h2>Topics</h2>
 <ul class="">
@@ -47,425 +43,32 @@
 
 <div id="content">
 
-<h1>Module <code>crypto</code></h1>
-<p>A high-level wrapper around libsodium.</p>
-<p>
-
-</p>
-    <h3>Info:</h3>
-    <ul>
-        <li><strong>Copyright</strong>: 2018 Grayson Burton and Oleg Silkin</li>
-        <li><strong>License</strong>: GNU AGPLv3</li>
-        <li><strong>Author</strong>: Grayson Burton</li>
-    </ul>
 
 
-<h2><a href="#Class_sign_state">Class sign_state </a></h2>
-<table class="function_list">
+<h2>Modules</h2>
+<table class="module_list">
 	<tr>
-	<td class="name" nowrap><a href="#sign_state:is_initialized">sign_state:is_initialized ()</a></td>
-	<td class="summary">Returns whether the object is initialized.</td>
+		<td class="name"  nowrap><a href="modules/crypto.html">crypto</a></td>
+		<td class="summary">A high-level wrapper around libsodium.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#sign_state:is_init">sign_state:is_init ()</a></td>
-	<td class="summary">An alias for <a href="index.html#sign_state:is_initialized">is_initialized</a></td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:initialize">sign_state:initialize ()</a></td>
-	<td class="summary">Initializes the object and returns it.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:init">sign_state:init ()</a></td>
-	<td class="summary">An alias for <a href="index.html#sign_state:initialize">initialize</a>.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:reset">sign_state:reset ()</a></td>
-	<td class="summary">Forcefully initializes the object, wiping its state, and returns it.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:insert">sign_state:insert (message)</a></td>
-	<td class="summary">Inserts a message into its state and returns the object.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:get_signature">sign_state:get_signature ()</a></td>
-	<td class="summary">Returns the signature of the state and resets it.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:get_sig">sign_state:get_sig ()</a></td>
-	<td class="summary">An alias for <a href="index.html#sign_state:get_signature">get_signature</a>.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#sign_state:verify">sign_state:verify (sig)</a></td>
-	<td class="summary">Given a signature string, returns whether the state verifies it.</td>
+		<td class="name"  nowrap><a href="modules/db.html">db</a></td>
+		<td class="summary">A wrapper around SQLite3 providing the high-level interface of the backend.</td>
 	</tr>
 </table>
-<h2><a href="#The_Public_Interface">The Public Interface </a></h2>
-<table class="function_list">
+<h2>Topics</h2>
+<table class="module_list">
 	<tr>
-	<td class="name" nowrap><a href="#new_sign_object">new_sign_object ()</a></td>
-	<td class="summary">Constructor for the high-level signing object.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#get_sig">get_sig (message)</a></td>
-	<td class="summary">Returns the signature of a message.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#get_pubkey">get_pubkey ()</a></td>
-	<td class="summary">Returns the public key.</td>
+		<td class="name"  nowrap><a href="topics/README.md.html">README.md</a></td>
+		<td class="summary"></td>
 	</tr>
 </table>
-
-<br/>
-<br/>
-
-
-    <h2 class="section-header has-description"><a name="Class_sign_state"></a>Class sign_state </h2>
-
-          <div class="section-description">
-          Ed25519ph state objects for high-level multipart signing.
-          </div>
-    <dl class="function">
-    <dt>
-    <a name = "sign_state:is_initialized"></a>
-    <strong>sign_state:is_initialized ()</strong>
-    </dt>
-    <dd>
-    Returns whether the object is initialized.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">bool</span></span>
-        <code>true</code> for initialized, <code>false</code> otherwise.
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="index.html#sign_state:initialize">initialize</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">crypto.new_sign_object():is_initialized() <span class="comment">--&gt; true</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "sign_state:is_init"></a>
-    <strong>sign_state:is_init ()</strong>
-    </dt>
-    <dd>
-    An alias for <a href="index.html#sign_state:is_initialized">is_initialized</a>
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">bool</span></span>
-
-
-
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "sign_state:initialize"></a>
-    <strong>sign_state:initialize ()</strong>
-    </dt>
-    <dd>
-    Initializes the object and returns it.
- If the state is already initialized, it does nothing it.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">sign_state</span></span>
-        <code>self</code>
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">sign_obj:initialize()</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "sign_state:init"></a>
-    <strong>sign_state:init ()</strong>
-    </dt>
-    <dd>
-    An alias for <a href="index.html#sign_state:initialize">initialize</a>.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">sign_state</span></span>
-
-
-
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "sign_state:reset"></a>
-    <strong>sign_state:reset ()</strong>
-    </dt>
-    <dd>
-    Forcefully initializes the object, wiping its state, and returns it.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">sign_state</span></span>
-        <code>self</code>
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <li><a href="index.html#sign_state:initialize">initialize</a></li>
-         <li><a href="index.html#sign_state:is_initialized">is_initialized</a></li>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">sign_obj:insert(<span class="string">"hello?"</span>):reset()</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "sign_state:insert"></a>
-    <strong>sign_state:insert (message)</strong>
-    </dt>
-    <dd>
-    Inserts a message into its state and returns the object.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">message</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         The message to insert.
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">sign_state</span></span>
-        <code>self</code>
-    </ol>
-
-    <h3>Raises:</h3>
-    Throws if <code>message</code> isn't a string.
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">sign_obj:insert(<span class="string">"sup dawg"</span>)</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "sign_state:get_signature"></a>
-    <strong>sign_state:get_signature ()</strong>
-    </dt>
-    <dd>
-    Returns the signature of the state and resets it.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-        The Ed25519ph of the contents.
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="index.html#sign_state:verify">verify</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">sign_obj:reset():insert(<span class="string">"get my signature"</span>):get_signature()</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "sign_state:get_sig"></a>
-    <strong>sign_state:get_sig ()</strong>
-    </dt>
-    <dd>
-    An alias for <a href="index.html#sign_state:get_signature">get_signature</a>.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-
-
-
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "sign_state:verify"></a>
-    <strong>sign_state:verify (sig)</strong>
-    </dt>
-    <dd>
-    Given a signature string, returns whether the state verifies it.
- The signature string must be 64 bytes long and have been made using one of
- the <a href="index.html#sign_state">sign_state</a> objects. Resets the state after.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">sig</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         The signature to verify. Must be exactly 64 bytes long.
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">bool</span></span>
-        <code>true</code> if it's verified, <code>false</code> otherwise.
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="index.html#sign_state:get_signature">get_signature</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">sign_obj:insert(<span class="string">"verify me"</span>):verify(past_signature)</pre>
-    </ul>
-
-</dd>
-</dl>
-    <h2 class="section-header "><a name="The_Public_Interface"></a>The Public Interface </h2>
-
-    <dl class="function">
-    <dt>
-    <a name = "new_sign_object"></a>
-    <strong>new_sign_object ()</strong>
-    </dt>
-    <dd>
-    Constructor for the high-level signing object. <br/>
- Automatically initializes it.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">sign_state</span></span>
-
-
-
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">crypto.new_sign_object()</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "get_sig"></a>
-    <strong>get_sig (message)</strong>
-    </dt>
-    <dd>
-    Returns the signature of a message.
- Gives a different result than Ed25519ph signing, as this uses Ed25519.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">message</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         The message to sign.
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-        The 64 byte signature of <code>message</code>.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">crypto.get_sig(<span class="string">"get my signature please"</span>)</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "get_pubkey"></a>
-    <strong>get_pubkey ()</strong>
-    </dt>
-    <dd>
-    Returns the public key.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-        The 32 byte public key.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">crypto.get_pubkey()</pre>
-    </ul>
-
-</dd>
-</dl>
-
 
 </div> <!-- id="content" -->
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-12-06 08:30:17 </i>
+<i style="float:right;">Last updated 2018-12-06 11:29:59 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

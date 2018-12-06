@@ -541,7 +541,7 @@ function sign_state.verify(self, sig)
 	return result
 end
 
---- The Public Interface
+--- crypto
 -- @section crypto
 
 --- Constructor for the high-level signing object. 

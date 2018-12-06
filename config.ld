@@ -1,7 +1,7 @@
-project='LBRY Comments'
-file='crypto.lua'
-readme='README.md'
-title='LBRY Comments Documentation'
 boilerplate=true
 format='markdown'
 dir='docs'
+project='LBRY Comments'
+readme='README.md'
+title='LBRY Comments Documentation'
+file={'crypto.lua', 'db.lua'}
