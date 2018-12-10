@@ -18,6 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --]]--
 
-local database = require "db.lua"
+package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
+
+local database = require "db"
 
 

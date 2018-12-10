@@ -31,33 +31,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -- @section options
 -- @local
 
---- The path to the database, relative to the script.
-local db_rpath = "../accoutrements.db"
+--- The path to the database, relative to the top path.
+local db_rpath = "accoutrements.db"
 
---- The path to the directory containing crypto.lua, relative to the script.
-local crypto_rpath = ""
+--- The path to the directory containing backups, relative to the top path.
+-- Will be created if not existing.
+local backup_rpath = "backups"
 
 --------------------------------------------------------------------------------
 -- Constants
 -- @section constants
 -- @local
 
-if not _G.srcpath then
-	_G.srcpath = debug.getinfo(1, "S").source:sub(2):gsub("([^/])$", "%1/")
-	-- This script shouldn't be (or even be able to be) run from the CLI.
-	assert(_G.srcpath ~= "[C]/", "Don't run crypto.lua from the luajit CLI")
-	-- Removes the file name from mypath so we have just the directory.
-	_G.srcpath = _G.srcpath:gsub("(.-/).-/$", "%1")
-end
-
---- The path to this script.
--- @local
-local mypath = _G.srcpath
+--- Uses LuaFileSystem for its directory creation.
+local lfs = require "lfs"
 
 --- Uses luasql.sqlite3.
 local sql_driver = require "luasql.sqlite3"
 --- Uses crypto.
-local crypto = require(mypath .. crypto_rpath .. "crypto")
+local crypto = require "crypto"
 --- @{sql_driver} requires this setup.
 -- No idea why to be honest, but whatever.
 local sql = sql_driver.sqlite3()
@@ -71,7 +63,7 @@ local mime = require "mime"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "0.0.2"
+local DB_VERSION = "0.0.3"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -81,7 +73,24 @@ local last_backup_time = 0
 local minimum_backup_time = 3600
 
 --- The path to the database.
-local db_path = mypath .. db_rpath
+local db_path = _G.toppath .. "/" .. db_rpath
+
+--- The path to the backups folder.
+-- It is created dynamically if it doesn't exist.
+local backup_path = _G.toppath .. "/" .. backup_rpath
+
+-- Here, we test if it exists, and create it if it doesn't.
+do
+	-- The directory file.
+	local backupdirf = io.open(backup_path, "rb")
+	
+	if backupdirf then
+		-- The directory already exists.
+		backupdirf:close()
+	else
+		assert(lfs.mkdir(backup_path))
+	end
+end
 
 --------------------------------------------------------------------------------
 -- Helper Functions
@@ -455,7 +464,7 @@ function _M.backup()
 		return nil, err_msg
 	end
 	
-	local bk_file, err_msg = io.open(file_name, "w+b")
+	local bk_file, err_msg = io.open(backup_path .. file_name, "w+b")
 	
 	if err_msg then
 		db_file:close()
@@ -492,7 +501,7 @@ function _M.backup()
 	-- Write 80 "="s on a new line at the end, followed by the signature on
 	--   the next line.
 	bk_file:write("\n" .. ("="):rep(80) .. "\n")
-	bk_file:write(b64_encode(sig_obj:sign()))
+	bk_file:write(b64_encode(sig_obj:get_sig()))
 	
 	bk_file:flush()
 	

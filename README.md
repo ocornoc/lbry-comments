@@ -4,9 +4,11 @@
 
 ***Please make sure to change the file `seed`.***
 
-## Busted support
+## How to use
 
-If you have busted installed, you can run busted from the project directory in order to run the tests.
+You must use the file `start` as it supplies the server with some necessary global variables.
+
+Run `./start -h` for more details.
 
 ## Dependencies
 
@@ -18,6 +20,7 @@ If you have busted installed, you can run busted from the project directory in o
 * [LuaFileSystem](https://keplerproject.github.io/luafilesystem/)
 * [LuaSQL](https://keplerproject.github.io/luasql/) (using SQLite3)
 * [busted](https://olivinelabs.com/busted/) (only for debug)
+* [LDoc](https://github.com/stevedonovan/LDoc) (only for documentation gen)
 
 ## Things to come
 
