@@ -1,4 +1,4 @@
---[[--
+--[[
 This file is part of LBRY-Comments.
 
 LBRY-Comments provides a simple network database for commenting.
@@ -16,10 +16,12 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
---]]--
+]]
 
-package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
+--package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
 
-local database = require "db"
+--local db = require "db"
 
-
+return function()
+	ngx.say"nice one, nerd"
+end

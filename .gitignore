@@ -1,3 +1,8 @@
 *.backup
 *.db
 *.stats.out
+client_body_temp
+fastcgi_temp
+logs
+scgi_temp
+uwsgi_temp

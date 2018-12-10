@@ -39,4 +39,5 @@ while getopts ":bhdD" opt; do
 	esac
 done
 
-luajit -e "${EXEC0}" -e "${EXEC1}" ${SCRIPT_PATH}
+openresty -c ${THIS_PATH}/conf/develop.conf -p ${THIS_PATH}
+#luajit -e "${EXEC0}" -e "${EXEC1}" ${SCRIPT_PATH}
