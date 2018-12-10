@@ -30,10 +30,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local ffi = require "ffi"
 
------------------------------------------OPTS------------------------------------
+---------------------------------------------------------------------------------
+-- Options
+-- @section options
+-- @local
 
--- The path to the file containing the keypair generation seed.
-local kseedfile_path = "seed"
+--- The path to the file containing the keypair generation seed.
+-- @local
+local kseedfile_rpath = "../seed"
 
 -----------------------------------------DECS------------------------------------
 
@@ -115,6 +119,21 @@ local sign_skbytes     = tonumber(sodium.crypto_sign_ed25519_secretkeybytes())
 -- libsodium returns -1 on failure, 0 on success, and 1 if it's already been
 --  initialized.
 assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
+
+if not _G.srcpath then
+	_G.srcpath = debug.getinfo(1, "S").source:sub(2):gsub("([^/])$", "%1/")
+	-- This script shouldn't be (or even be able to be) run from the CLI.
+	assert(_G.srcpath ~= "[C]/", "Don't run crypto.lua from the luajit CLI")
+	-- Removes the file name from mypath so we have just the directory.
+	_G.srcpath = _G.srcpath:gsub("(.-/).-/$", "%1")
+end
+
+--- The path to this script.
+-- @local
+local mypath = _G.srcpath
+
+--- The path to the key seed file.
+local kseedfile_path = mypath .. kseedfile_rpath
 
 --------------------------------------------------------------------------------
 -- Padding

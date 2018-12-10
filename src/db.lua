@@ -27,14 +27,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -- @author Grayson Burton
 
 --------------------------------------------------------------------------------
+-- Options
+-- @section options
+-- @local
+
+--- The path to the database, relative to the script.
+local db_rpath = "../accoutrements.db"
+
+--- The path to the directory containing crypto.lua, relative to the script.
+local crypto_rpath = ""
+
+--------------------------------------------------------------------------------
 -- Constants
 -- @section constants
 -- @local
 
+if not _G.srcpath then
+	_G.srcpath = debug.getinfo(1, "S").source:sub(2):gsub("([^/])$", "%1/")
+	-- This script shouldn't be (or even be able to be) run from the CLI.
+	assert(_G.srcpath ~= "[C]/", "Don't run crypto.lua from the luajit CLI")
+	-- Removes the file name from mypath so we have just the directory.
+	_G.srcpath = _G.srcpath:gsub("(.-/).-/$", "%1")
+end
+
+--- The path to this script.
+-- @local
+local mypath = _G.srcpath
+
 --- Uses luasql.sqlite3.
 local sql_driver = require "luasql.sqlite3"
 --- Uses crypto.
-local crypto = require "crypto"
+local crypto = require(mypath .. crypto_rpath .. "crypto")
 --- @{sql_driver} requires this setup.
 -- No idea why to be honest, but whatever.
 local sql = sql_driver.sqlite3()
@@ -48,9 +71,7 @@ local mime = require "mime"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "0.0.1"
---- The path to the database, relative to the script.
-local db_path = "accoutrements.db"
+local DB_VERSION = "0.0.2"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -58,6 +79,9 @@ local last_backup_time = 0
 -- This exists to put a hard stop to any form of backup spam, whether from
 -- internal error or external maliciousness.
 local minimum_backup_time = 3600
+
+--- The path to the database.
+local db_path = mypath .. db_rpath
 
 --------------------------------------------------------------------------------
 -- Helper Functions
