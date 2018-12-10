@@ -283,13 +283,21 @@ local function new_backup_entry(size)
 		return nil, err_msg
 	end
 	
+	local time = get_unix_time()
+	
 	-- Now, to insert it into the database.
 	local _, err_msg = accouts:execute([[
 	 INSERT INTO backups(creation_time, totalcomments, totalclaims, size_kb)
-	 VALUES (]] .. get_unix_time() .. ", " .. com_count .. ", " ..
-	 claim_count .. ", " .. size .. ");")
+	 VALUES (]] .. time .. ", " .. com_count .. ", " .. claim_count ..
+	 ", " .. size .. ");")
 	
-	return not err_msg or nil, err_msg
+	if err_msg then
+		return nil, err_msg
+	else
+		last_backup_time = time
+		
+		return true
+	end
 end
 
 --- Returns the ID of the latest comment in @{accouts.comments}.
