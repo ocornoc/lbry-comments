@@ -27,7 +27,13 @@ If you have busted installed, you can run busted from the project directory in o
 
 - [x] busted support
 - [x] comment u/d-voting
-- [ ] claim/comment deletion
-- [ ] LDoc/LuaDoc-style documentation
-- [ ] comment editing
+- [x] LDoc/LuaDoc-style documentation
+
+These will come near the end of the project:
+
 - [ ] posting backups to LBRY
+
+These are planned to be completed at an indeterminate time, due to factors outside of our control:
+
+- [ ] claim/comment deletion
+- [ ] comment editing
