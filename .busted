@@ -9,4 +9,9 @@ return {
 		tags = "api",
 		verbose = true,
 	},
+	
+	crypto = {
+		tags = "api",
+		verbose = true,
+	},
 }
