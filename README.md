@@ -8,6 +8,17 @@
 
 If you have busted installed, you can run busted from the project directory in order to run the tests.
 
+## Dependencies
+
+* [libsodium](https://github.com/jedisct1/libsodium)
+* [OpenResty](https://openresty.org/en/)
+* [luajit](http://luajit.org/luajit.html) >= 2.0.0 (included in OpenResty)
+* [lua-cjson](https://github.com/mpx/lua-cjson) (included in OpenResty)
+* [luasocket](https://github.com/diegonehab/luasocket)
+* [LuaFileSystem](https://keplerproject.github.io/luafilesystem/)
+* [LuaSQL](https://keplerproject.github.io/luasql/) (using SQLite3)
+* [busted](https://olivinelabs.com/busted/) (only for debug)
+
 ## Things to come
 
 ### For the backend:
