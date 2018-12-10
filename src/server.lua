@@ -18,10 +18,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
---package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
+_G.toppath = ngx.config.prefix()
+_G.srcpath = _G.toppath .. "/src"
 
---local db = require "db"
+package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
+
+local db = require "db"
 
 return function()
-	ngx.say"nice one, nerd"
+	local resp_pipe = assert(io.popen[[bash -c "echo \"\$(cd \"\$(dirname \"\${BASH_SOURCE[0]}\")\" && pwd)\""]])
+	local resp = assert(resp_pipe:read"*a")
+	resp_pipe:close()
+	
+	ngx.say(resp)
 end

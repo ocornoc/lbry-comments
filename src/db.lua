@@ -53,12 +53,8 @@ local crypto = require "crypto"
 --- @{sql_driver} requires this setup.
 -- No idea why to be honest, but whatever.
 local sql = sql_driver.sqlite3()
---- Uses luasocket.
--- No networking components are actually used, it's just for time.
-local sock = require "socket"
---- Uses luasocket's MIME submodule.
--- Used for its Base64 facilities.
-local mime = require "mime"
+--- Uses ngx.
+local ngx = require "ngx"
 
 --- Version of the API.
 -- Follows SemVer 2.0.0
@@ -102,7 +98,7 @@ end
 -- @treturn int
 -- @usage get_unix_time()
 local function get_unix_time()
-	return math.floor(sock.gettime())
+	return ngx.time()
 end
 
 --- Encodes a string in Base64.
@@ -111,18 +107,18 @@ end
 -- @see b64_decode
 -- @usage b64_encode("hello") --> "aGVsbG8="
 local function b64_encode(plain_str)
-	return (mime.b64(plain_str))
+	return ngx.encode_base64(plain_str)
 end
 
 --- Decodes a Base64-encoded string.
--- The return string is the largest section from the start of the input that
--- can be decoded. It stops at the first undecodable symbol(s).
+-- The return string is the decoded string on success, or nil on error.
 -- @tparam string encoded_str The encoded input.
--- @treturn string The decoded output.
+-- @treturn[1] string The decoded output.
+-- @treturn[2] nil If the input isn't well-formed.
 -- @see b64_encode
 -- @usage b64_decode("aGVsbG8=") --> "hello"
 local function b64_decode(encoded_str)
-	return (mime.unb64(encoded_str))
+	return ngx.decode_base64(plain_str)
 end
 
 --- Returns whether a table is empty.

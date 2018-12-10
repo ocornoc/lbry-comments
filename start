@@ -40,4 +40,3 @@ while getopts ":bhdD" opt; do
 done
 
 openresty -c ${THIS_PATH}/conf/develop.conf -p ${THIS_PATH}
-#luajit -e "${EXEC0}" -e "${EXEC1}" ${SCRIPT_PATH}
