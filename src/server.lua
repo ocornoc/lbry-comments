@@ -24,11 +24,31 @@ _G.srcpath = _G.toppath .. "/src"
 package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
 
 local db = require "db"
+local json = require "cjson"
+
+
+local function method_get()
+	return ngx.say"get"
+end
+
+local function method_head()
+	return nil
+end
+
+local function method_post()
+	return ngx.say"post"
+end
 
 return function()
-	local resp_pipe = assert(io.popen[[bash -c "echo \"\$(cd \"\$(dirname \"\${BASH_SOURCE[0]}\")\" && pwd)\""]])
-	local resp = assert(resp_pipe:read"*a")
-	resp_pipe:close()
+	local method = ngx.req.get_method()
 	
-	ngx.say(resp)
+	if method == "GET" then
+		return method_get()
+	elseif method == "HEAD" then
+		return method_head()
+	elseif method == "POST" then
+		return method_post()
+	else
+		return ngx.say"You discovered a bug! Email the owners, please."
+	end
 end
