@@ -83,7 +83,9 @@ end
 -- @treturn[2] string An explanation of what caused it not to be valid.
 -- @usage jrpc.is_valid_req{jsonrpc = "2.0", method = "help"}  --> true
 function jrpc.is_valid_req(tab)
-	if type(tab.method) ~= "string" then
+	if tab.jsonrpc ~= "2.0" then
+		return nil, "unsupported version"
+	elseif type(tab.method) ~= "string" then
 		return nil, "method not a string"
 	elseif tab.params ~= nil and type(tab.params) ~= "table" then
 		return nil, "params not nil nor table"
@@ -105,9 +107,7 @@ end
 -- @usage jrpc.is_valid{jsonrpc = "2.0", method = "help"}  --> true
 -- @usage jrpc.is_valid{jsonrpc = "1.0", method = "help"}  --> false
 function jrpc.is_valid(tab)
-	if tab.jsonrpc ~= "2.0" then
-		return nil, "unsupported version"
-	elseif tab.method == nil then
+	if tab.method == nil then
 		return jrpc.is_valid_batch_req(tab)
 	else
 		return jrpc.is_valid_req(tab)
