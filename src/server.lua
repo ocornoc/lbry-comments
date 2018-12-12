@@ -19,9 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 --------------------------------------------------------------------------------
--- An OpenResty frontend for db.lua.
+-- An OpenResty frontend for api.lua.
 -- All JSON-RPC interactions are supposed to use JSON-RPC 2.0 over HTTP.
+--
 -- https://www.simple-is-better.org/json-rpc/transport_http.html
+--
 -- That JSON-RPC 2.0 over HTTP specification is referred to as "JRPC-HTTP" here
 -- sometimes.
 -- @module server
@@ -35,82 +37,141 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -- @local
 
 --- The path to the project directory.
+-- @local
 _G.toppath = ngx.config.prefix()
 --- The path to the "src" subdirectory.
+-- @local
 _G.srcpath = _G.toppath .. "/src"
 
 --------------------------------------------------------------------------------
 
 package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
 
-local db = require "db"
+local api = require "api"
 local json = require "cjson"
 
 --------------------------------------------------------------------------------
--- jrpc
--- @section jrpc
+-- JSON-RPC
+-- @section jrpcsec
 -- @local
 
-local jrpc = {}
+--- Returns a JSON-RPC error response object.
+-- `id` can be `nil`, JSON `NULL`, a number, or a string.
+-- WARNING: will *not* throw if the type is wrong.
+-- @tparam string message The concise error descriptor or reason.
+-- @tparam[opt=-32600] int code The error code.
+-- @param[opt=null] id The ID of the error's recipient.
+-- @treturn table The JSON-RPC error response object, not yet JSON-encoded.
+-- @local
+-- @usage jrpc.make_error("Dude, did you just keyspam?")  --> table
+-- @usage jrpc.make_error("Nerds beware!", 20, "bob")     --> table
+function jrpc.make_error(message, code, id)
+	return {
+		jsonrpc = "2.0",
+		error = {
+			code = code or -32600,
+			message = message
+		},
+		id = id or json.null,
+	}
+end
 
---- Returns whether the input is a valid JSON-RPC batch request.
--- Doesn't work for single requests.
--- @tparam table tab The decoded JSON table.
--- @treturn[1] bool `true` if it is valid.
--- @treturn[2] nil If it isn't valid.
--- @treturn[2] string An explanation of what caused it not to be valid.
--- @usage jrpc.is_valid_batch_req{jsonrpc = "2.0", {method = "help"}}  --> true
--- @usage jrpc.is_valid_batch_req{jsonrpc = "2.0", method = "help"}    --> false
-function jrpc.is_valid_batch_req(tab)
-	local success, err_msg
+--- Dispatches API calls for a batch request.
+-- @tparam table tab A JRPC batch request object.
+-- @treturn[1] table An array of JRPC responses for the batch of requests.
+-- The index of the response object matches the index of the request it is
+-- a response to.
+-- @treturn[2] table A JRPC error response object if the batch couldn't be
+-- started.
+-- @local
+-- @see jrpc.dispatch_req
+function jrpc.dispatch_batch(tab)
+	if type(tab) ~= "table" then
+		return jrpc.make_error("not an array")
+	elseif #tab == 0 then
+		return jrpc.make_error("empty array")
+	end
 	
-	for k,v in ipairs(tab) do
-		success, err_msg = jrpc.is_valid_req(v)
-		
-		if not success then
-			return nil, err_msg
+	local int_index_count = 0
+	
+	for k,v in pairs(tab) do
+		if type(k) == "number" then
+			int_index_count = int_index_count + 1
+		else
+			return jrpc.make_error("not an array")
 		end
 	end
 	
-	return true
+	if int_index_count ~= #tab then
+		return jrpc.make_error("sparse array")
+	end
+	
+	local results = {}
+	
+	for k,v in ipairs(tab) do
+		results[k] = jrpc.dispatch_req(v)
+	end
+	
+	return results
 end
 
---- Returns whether the input is a valid JSON-RPC request.
--- Doesn't work for batch requests.
--- @tparam table tab The decoded JSON table.
--- @treturn[1] bool `true` if it is valid.
--- @treturn[2] nil If it isn't valid.
--- @treturn[2] string An explanation of what caused it not to be valid.
--- @usage jrpc.is_valid_req{jsonrpc = "2.0", method = "help"}  --> true
-function jrpc.is_valid_req(tab)
-	if tab.jsonrpc ~= "2.0" then
-		return nil, "unsupported version"
+--- Dispatches an API call for a request.
+-- @tparam table tab A JRPC request object.
+-- @treturn table The JRPC response object that is associated with the inputted
+-- request object.
+-- @local
+function jrpc.dispatch_req(tab)
+	if type(tab) ~= "table" then
+		return jrpc.make_error("not a table")
+	elseif tab.jsonrpc ~= "2.0" then
+		return jrpc.make_error("unsupported version")
 	elseif type(tab.method) ~= "string" then
-		return nil, "method not a string"
-	elseif tab.params ~= nil and type(tab.params) ~= "table" then
-		return nil, "params not nil nor table"
+		return jrpc.make_error("method not a string")
+	elseif tab.params ~= nil and
+	       tab.params ~= json.null and
+	       type(tab.params) ~= "table" then
+		return jrpc.make_error("params not nil/table/null")
 	elseif type(tab.id) ~= "string" and
 	       type(tab.id) ~= "number" and
-	       tab.id ~= nil then
-		return nil, "id not nil nor string nor number"
+	       tab.id ~= nil and
+	       tab.id ~= json.null then
+		return jrpc.make_error("id not null/nil/string/number")
+	elseif api[tab.method] then
+		local result, err = api[tab.method](tab.params)
+		
+		if tab.id ~= nil and tab.id ~= json.null then
+			if result and not err then
+				return {
+					jsonrpc = "2.0",
+					id = tab.id,
+					result = result
+				}
+			else
+				return {
+					jsonrpc = "2.0",
+					id = tab.id,
+					error = err,
+				}
+			end
+		end
 	else
-		return true
+		return jrpc.make_error("method not found", -32601)
 	end
 end
 
---- Returns whether the input is valid JSON-RPC.
--- Only works for JSON-RPC 2.0 requests.
--- @tparam table tab The decoded JSON table.
--- @treturn[1] bool `true` if it is valid.
--- @treturn[2] nil If it isn't valid.
--- @treturn[2] string An explanation of what caused it not to be valid.
--- @usage jrpc.is_valid{jsonrpc = "2.0", method = "help"}  --> true
--- @usage jrpc.is_valid{jsonrpc = "1.0", method = "help"}  --> false
-function jrpc.is_valid(tab)
+--- Dispatches the object according to its type.
+-- If the object is a batch request, it gets sent to the appropriate dispatcher.
+-- Otherwise, it gets sent to the request dispatcher.
+-- @tparam table tab A JRPC request or batch request object.
+-- @treturn table The result of the object's associated dispatcher.
+-- @local
+-- @see jrpc.dispatch_req
+-- @see jrpc.dispatch_batch
+function jrpc.dispatch(tab)
 	if tab.method == nil then
-		return jrpc.is_valid_batch_req(tab)
+		return jrpc.dispatch_batch(tab)
 	else
-		return jrpc.is_valid_req(tab)
+		return jrpc.dispatch_req(tab)
 	end
 end
 
@@ -120,7 +181,7 @@ end
 -- @local
 
 --- Gets the body of the request.
--- @raise
+-- @raise Will quit with a Status 400 if it can't get the request body.
 -- @treturn string
 local function get_body_data()
 	ngx.req.read_body()
@@ -133,7 +194,7 @@ local function get_body_data()
 		if not body_path then
 			ngx.log(ngx.ERR, "Couldn't get req. body")
 			
-			return ngx.exit(ngx.ERROR)
+			return ngx.exit(ngx.ERR)
 		end
 		
 		local handle = io.open(body_path, "rb")
@@ -170,7 +231,7 @@ local function method_post()
 	if err_msg == "truncated" then
 		-- If the request headers are too big, just bail.
 		-- OpenResty doesn't support Status 431.
-		return ngx.exit(ngx.ERROR)
+		return ngx.exit(ngx.ERR)
 	-- If no "Accept" header field, it's assumed to equal "Content-Type".
 	elseif headers["Accept"] ~= nil and
 	       headers["Accept"] ~= "*/*" and
@@ -180,13 +241,34 @@ local function method_post()
 		return ngx.exit(ngx.HTTP_NOT_ACCEPTABLE)
 	elseif headers["Content-Type"] ~= "application/json" then
 		-- We only can accept JSON.
-		-- OpenResty doesn't support Status 415.
-		return ngx.exit(ngx.ERROR)
+		-- OpenResty doesn't support Status 415 *in documentation*.
+		-- I accidentally found out that does anyways but I don't
+		-- want to depend on it.
+		return ngx.exit(ngx.ERR)
 	end
 	
-	local body = get_body_data()
+	local body = get_body_data():gsub("^%s+", ""):gsub("%s+$", "")
+	local decoded
+	local success, err_msg = pcall(function()
+		decoded = json.decode(body)
+	end)
 	
-	return ngx.say(body)
+	if not success then
+		return ngx.say(json.encode{
+			jsonrpc = "2.0",
+			error = {
+				code = -32700,
+				message = "invalid json, failed to parse",
+			},
+			id = json.null
+		})
+	end
+	
+	local result = jrpc.dispatch(decoded)
+	
+	if result then
+		return ngx.say(json.encode(result))
+	end
 end
 
 --------------------------------------------------------------------------------
