@@ -32,6 +32,8 @@ local db = require "db"
 local json = require "cjson"
 local api = {}
 
+local api_VERSION = "0.0.0"
+
 --------------------------------------------------------------------------------
 -- Helpers
 -- @section helpers
@@ -51,7 +53,7 @@ local function make_error(message, code, id)
 		jsonrpc = "2.0",
 		error = {
 			code = code or -32600,
-			message = message
+			message = message,
 		},
 		id = id or json.null,
 	}
@@ -65,8 +67,39 @@ end
 -- This function is hyper-optimized and uses a lot of very high-level computer
 -- science techniques in order to produce the output it does.
 -- @treturn string "pong"
+-- @usage {"jsonrpc": "2.0", "method": "ping", "id": 1} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": "pong"}
 function api.ping()
 	return "pong"
+end
+
+--- Returns the status and versions of the server components.
+-- @treturn table status
+--
+-- `status.is_running` is a boolean, always `true`.
+--
+-- `status.is_db_running` is a boolean, describing whether the database is
+-- currently running.
+--
+-- `status.api_version` is a string, representing the SemVer 2.0.0 version
+-- of the API.
+--
+-- `status.db_version` is a string, representing the SemVer 2.0.0 version
+-- of the database.
+-- @usage {"jsonrpc": "2.0", "method": "status", "id": 1} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {
+-- 	"is_running": true,
+-- 	"is_db_running": true,
+-- 	"api_version": "0.0.0",
+-- 	"db_version": "0.0.3"
+-- }}
+function api.status()
+	return {
+		is_running = true,
+		is_db_running = db.is_running(),
+		api_version = api_VERSION,
+		db_version = db._VERSION,
+	}
 end
 
 --------------------------------------------------------------------------------

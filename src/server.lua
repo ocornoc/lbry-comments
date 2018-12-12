@@ -32,18 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -- @author Grayson Burton
 
 --------------------------------------------------------------------------------
--- Global Variables
--- @section globals
--- @local
-
---- The path to the project directory.
--- @local
-_G.toppath = ngx.config.prefix()
---- The path to the "src" subdirectory.
--- @local
-_G.srcpath = _G.toppath .. "/src"
-
---------------------------------------------------------------------------------
 
 package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
 
