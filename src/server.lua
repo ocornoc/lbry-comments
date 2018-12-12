@@ -49,6 +49,7 @@ package.path = package.path .. ";" .. _G.srcpath .. "/?.lua"
 
 local api = require "api"
 local json = require "cjson"
+local jrpc = {}
 
 --------------------------------------------------------------------------------
 -- JSON-RPC
