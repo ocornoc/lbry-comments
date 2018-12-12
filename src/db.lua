@@ -59,7 +59,7 @@ local ngx = require "ngx"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "0.0.3"
+local DB_VERSION = "0.1.0"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -392,10 +392,10 @@ function _M.stop()
 			
 			return true
 		else
-			return nil, "There are still cursors open"
+			return nil, "cursors open"
 		end
 	else
-		return nil, "The database is already stopped"
+		return nil, "already stopped"
 	end
 end
 
@@ -408,7 +408,7 @@ end
 -- @usage db.start()
 function _M.start()
 	if running then
-		return nil, "The database is already started"
+		return nil, "already started"
 	else
 		accouts = sql:connect(db_path)
 		running = true
@@ -545,8 +545,7 @@ end
 -- @usage db.claims.get_data("lbry://another_one", true) --> table
 function _M.claims.get_data(claim_uri, int_ind)
 	if type(claim_uri) ~= "string" then
-		return nil, "The claim URI needs to be a string, is a " ..
-		            type(claim_uri) .. "."
+		return nil, "uri not string"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -569,8 +568,7 @@ function _M.claims.get_data(claim_uri, int_ind)
 	if not is_empty_table(results) then
 		return results
 	else
-		return nil, "The claim URI '" .. claim_uri ..
-			    "' does not exist."
+		return nil, "uri doesnt exist"
 	end
 end
 
@@ -588,10 +586,9 @@ function _M.claims.upvote(claim_uri, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to upvote needs to be a number, is a " ..
-		            type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to upvote is fractional, not an integer."
+		return nil, "times not int"
 	end
 	
 	local data, err_msg = _M.claims.get_data(claim_uri)
@@ -626,11 +623,9 @@ function _M.claims.downvote(claim_uri, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to downvote needs to be a number, " ..
-		            "is a " .. type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to downvote is fractional, not an " ..
-		            "integer."
+		return nil, "times not int"
 	end
 	
 	local data, err_msg = _M.claims.get_data(claim_uri)
@@ -660,7 +655,7 @@ end
 -- @usage db.claims.downvote(20) --> a LBRY URI
 function _M.claims.get_uri(claim_index)
 	if type(claim_index) ~= "number" then
-		return nil, "'claim_index' must be a number"
+		return nil, "index not number"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -678,7 +673,7 @@ function _M.claims.get_uri(claim_index)
 	if results then
 		return results
 	else
-		return nil, "URI not found"
+		return nil, "uri not found"
 	end
 end
 
@@ -705,7 +700,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	local claim_index = claim_data.claim_index
 	
 	if not claim_index or type(claim_index) ~= "number" then
-		return nil, "The stored data is weird, please report this bug!"
+		return nil, "weird data"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -752,7 +747,7 @@ function _M.comments.new(claim_uri, poster, message)
 			local result, err_msg = _M.claims.new(claim_uri)
 			-- If that doesn't work, just give up.
 			if err_msg then
-				return nil, "Failed to create claim on demand"
+				return nil, "failed on-demand claim"
 			-- Otherwise, retry now that you've created the claim.
 			else
 				return _M.comments.new(claim_uri, poster,
@@ -766,16 +761,16 @@ function _M.comments.new(claim_uri, poster, message)
 	
 	-- 'message' must be a string and mustn't be empty nor only whitespace.
 	if type(message) ~= "string" then
-		return nil, "Invalid 'message' type"
+		return nil, "message not string"
 	elseif message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'message' contents"
+		return nil, "message only whitespace"
 	end
 	
 	-- 'poster' must be a string and mustn't be empty nor only whitespace.
 	if type(poster) ~= "string" then
-		return nil, "Invalid 'poster' type"
+		return nil, "poster not string"
 	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'poster' contents"
+		return nil, "poster only whitepsace"
 	end
 	
 	local claim_index = claim_data.claim_index
@@ -817,16 +812,16 @@ function _M.comments.new_reply(parent_id, poster, message)
 	
 	-- 'message' must be a string and mustn't be empty nor only whitespace.
 	if type(message) ~= "string" then
-		return nil, "Invalid 'message' type"
+		return nil, "message not string"
 	elseif message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'message' contents"
+		return nil, "message only whitespace"
 	end
 	
 	-- 'poster' must be a string and mustn't be empty nor only whitespace.
 	if type(poster) ~= "string" then
-		return nil, "Invalid 'poster' type"
+		return nil, "poster not string"
 	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'poster' contents"
+		return nil, "poster only whitespace"
 	end
 	
 	local claim_index = parent_data.claim_index
@@ -863,7 +858,7 @@ end
 -- @usage db.comments.get_data(21, true) --> table
 function _M.comments.get_data(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
-		return nil, "'comment_id' must be a number"
+		return nil, "id not number"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -885,7 +880,7 @@ function _M.comments.get_data(comment_id, int_ind)
 	if not is_empty_table(results) then
 		return results
 	else
-		return nil, "Comment #" .. comment_id .. " does not exist."
+		return nil, "comment doesnt exist"
 	end
 end
 
@@ -902,7 +897,7 @@ end
 -- @usage db.comments.get_replies(21, true) --> table
 function _M.comments.get_replies(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
-		return nil, "'comment_id' must be a number"
+		return nil, "id not number"
 	end
 	
 	-- We fetch the parent comment data in order to check if the comment is
@@ -951,10 +946,9 @@ function _M.comments.upvote(comment_id, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to upvote needs to be a number, is a " ..
-		            type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to upvote is fractional, not an integer."
+		return nil, "times not an int"
 	end
 	
 	local data, err_msg = _M.comments.get_data(comment_id)
@@ -994,11 +988,9 @@ function _M.comments.downvote(comment_id, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to downvote needs to be a number, " ..
-		            "is a " .. type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to downvote is fractional, not an " ..
-		            "integer."
+		return nil, "times not an int"
 	end
 	
 	local data, err_msg = _M.comments.get_data(comment_id)
