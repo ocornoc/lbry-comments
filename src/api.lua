@@ -329,6 +329,62 @@ function api.get_claim_uri(args)
 	end
 end
 
+--- Returns all top-level comments on a claim.
+-- @tparam table args The table of arguments.
+--
+-- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- If the URI isn't valid/acceptable, the function will return with an
+-- `error_code.INVALID_URI` response.
+-- @treturn[1] table An array of top-level comments.
+--
+-- Fields for each comment:
+--
+-- `comm_index`: An int holding the index of the comment.
+--
+-- `claim_index`: An int holding the index of the claims that this is a
+-- comment on.
+--
+-- `poster_name`: A string holding the name of the poster.
+--
+-- `parent_com`: An int holding the `comment_index` field of another comment
+-- object that is the parent of this comment. Because these comments are always
+-- top-level comments, the field is ommited (`nil`).
+--
+-- `post_time`: An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds.
+--
+-- `message`: A string holding the body of the comment.
+--
+-- `upvotes`: An int representing the amount of upvotes for that comment.
+--
+-- `downvotes`: An int representing the amount of downvotes for that
+-- comment.
+--
+-- @treturn[2] NULL The claim is not in the database.
+-- @usage {"jsonrpc": "2.0", "method": "get_claim_comments", "id": 1,
+--  "params": {
+-- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": [...]}
+function api.get_claim_comments(args)
+	if type(args.uri) ~= "string" then
+		return nil, make_error"'uri' must be a string"
+	elseif not valid_perm_uri(args.uri) then
+		return nil, make_error("'uri' unacceptable form",
+		                       error_code.INVALID_URI)
+	end
+	
+	local tlcs, err_msg = db.claims.get_comments(args.uri)
+	
+	if err_msg == "uri doesnt exist" then
+		return json.null
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		return tlcs
+	end
+end
+
 --------------------------------------------------------------------------------
 
 return api
