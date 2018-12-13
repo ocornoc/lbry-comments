@@ -713,7 +713,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	end
 	
 	local results = {}
-	local com_data = {}
+	local com_data
 	
 	repeat
 		table.insert(results, com_data)
