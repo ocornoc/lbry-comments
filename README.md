@@ -18,8 +18,9 @@ Run `./start -h` for more details.
 * [busted](https://olivinelabs.com/busted/) (only for debug)
 * [LDoc](https://github.com/stevedonovan/LDoc) (only for documentation gen)
 
-LuaSQL and Busted must be installed using appropriate OPM packages or manually installed in OpenResty's tree.
-LDoc doesn't have to be installed in the tree.
+LuaSQL must be installed using appropriate OPM packages or manually installed in OpenResty's tree.
+LDoc doesn't have to be installed in the tree. Busted doesn't either, but you must have a Lua
+interpreter somewhere to run it with.
 
 ## Things to come
 

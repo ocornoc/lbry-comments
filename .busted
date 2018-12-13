@@ -2,7 +2,7 @@ return {
 	default = {
 		verbose = true,
 		coverage = false,
-		lua = "luajit"
+		lua = "resty"
 	},
 	
 	_all = {
