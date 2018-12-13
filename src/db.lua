@@ -744,7 +744,7 @@ function _M.comments.new(claim_uri, poster, message)
 	-- If there is an error, 
 	if err_msg then
 		-- and the error is that the claim doesn't exist in the DB,
-		if err_msg:sub(1, 13) == "The claim URI" then
+		if err_msg == "uri doesnt exist" then
 			-- try creating the claim dynamically.
 			local result, err_msg = _M.claims.new(claim_uri)
 			-- If that doesn't work, just give up.

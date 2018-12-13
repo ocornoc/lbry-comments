@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.2.0"
+local api_VERSION = "0.3.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -392,6 +392,72 @@ end
 --------------------------------------------------------------------------------
 -- Comment API
 -- @section pubapicomment
+
+--- Creates a top-level comment and returns its ID.
+-- WARNING: The function db.comments.new causes a data race! Make sure to spit
+-- on the devs until they fix it.
+-- @tparam table params The table of arguments.
+--
+-- `params.uri`: A string containing a full-length permanent LBRY claim URI.
+-- If the URI isn't valid/acceptable, the function will return with an
+-- `error_code.INVALID_URI` response.
+--
+-- `params.poster`: A string containing the username or moniker of the poster.
+-- The string, after having all beginning and end whitespace stripped, must be
+-- at least 2 bytes long and less than 128 bytes long.
+--
+-- `params.message`: A string containing the message or body of the comment. The
+-- body, after having all beginning and end whitespace stripped, must be at
+-- least 2 bytes long and less than 65536 bytes long.
+-- @treturn int The ID of the comment.
+-- @usage {"jsonrpc": "2.0", "method": "comment", "id": 1,
+--  "params": {
+-- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c",
+-- 	"poster": "A really cool dude",
+-- 	"message": "Wow, great video!"
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 14}
+function api.comment(params)
+	if type(params.uri) ~= "string" then
+		return nil, make_error"'uri' must be a string"
+	elseif not valid_perm_uri(params.uri) then
+		return nil, make_error("'uri' unacceptable form",
+		                       error_code.INVALID_URI)
+	elseif type(params.poster) ~= "string" then
+		return nil, make_error"'poster' must be a string"
+	elseif params.poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, make_error"'poster' only whitespace"
+	elseif type(params.message) ~= "string" then
+		return nil, make_error"'message' must be a string"
+	elseif params.message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, make_error"'message' only whitespace"
+	end
+	
+	-- Strip head-and-tail whitespace from poster and message.
+	params.poster = params.poster:gsub("^%s+", ""):gsub("%s+$", "")
+	params.message = params.message:gsub("^%s+", ""):gsub("%s+$", "")
+	
+	if params.poster:len() > 127 then
+		return nil, make_error"'poster' too long"
+	elseif params.poster:len() < 2 then
+		return nil, make_error"'poster' too short"
+	elseif params.message:len() > 65535 then
+		return nil, make_error"'message' too long"
+	elseif params.message:len() < 2 then
+		return nil, make_error"'message' too short"
+	end
+	
+	local id, err_msg = db.comments.new(params.uri, params.poster,
+	                                    params.message)
+	
+	if id and not err_msg then
+		return id
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		return nil, make_error("unknown", error_code.UNKNOWN)
+	end
+end
 
 --------------------------------------------------------------------------------
 
