@@ -144,9 +144,9 @@ end
 -- @section pubapiclaim
 
 --- Returns the data associated with a claim.
--- @tparam table args The table of arguments.
+-- @tparam table params The table of arguments.
 --
--- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
 -- @treturn[1] table The data associated with that URI, if the URI has data.
@@ -172,15 +172,15 @@ end
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {...}}
-function api.get_claim_data(args)
-	if type(args.uri) ~= "string" then
+function api.get_claim_data(params)
+	if type(params.uri) ~= "string" then
 		return nil, make_error"'uri' must be a string"
-	elseif not valid_perm_uri(args.uri) then
+	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
 	end
 	
-	local data, err_msg = db.claims.get_data(args.uri)
+	local data, err_msg = db.claims.get_data(params.uri)
 	
 	if data and not err_msg then
 		return data
@@ -195,9 +195,9 @@ function api.get_claim_data(args)
 end
 
 --- Upvotes a claim and returns the new total amount of upvotes.
--- @tparam table args The table of arguments.
+-- @tparam table params The table of arguments.
 --
--- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
 -- @treturn int The new total amount of upvotes.
@@ -205,20 +205,20 @@ end
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 5}
-function api.upvote_claim(args)
-	if type(args.uri) ~= "string" then
+function api.upvote_claim(params)
+	if type(params.uri) ~= "string" then
 		return nil, make_error"'uri' must be a string"
-	elseif not valid_perm_uri(args.uri) then
+	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
 	end
 	
 	-- We get the data for the claim to tell if it exists. If it doesn't
 	-- exist in the database, we create it on-demand.
-	local _, err_msg = db.claims.get_data(args.uri)
+	local _, err_msg = db.claims.get_data(params.uri)
 	
 	if err_msg == "uri doesnt exist" then
-		local success, err_msg = db.claims.new(args.uri)
+		local success, err_msg = db.claims.new(params.uri)
 		
 		if not success then 
 			if err_msg then
@@ -233,7 +233,7 @@ function api.upvote_claim(args)
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	end
 	
-	local total, err_msg = db.claims.upvote(args.uri)
+	local total, err_msg = db.claims.upvote(params.uri)
 	
 	if total and not err_msg then
 		return total
@@ -247,9 +247,9 @@ function api.upvote_claim(args)
 end
 
 --- Downvotes a claim and returns the new total amount of downvotes.
--- @tparam table args The table of arguments.
+-- @tparam table params The table of arguments.
 --
--- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
 -- @treturn int The new total amount of downvotes.
@@ -257,20 +257,20 @@ end
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 5}
-function api.downvote_claim(args)
-	if type(args.uri) ~= "string" then
+function api.downvote_claim(params)
+	if type(params.uri) ~= "string" then
 		return nil, make_error"'uri' must be a string"
-	elseif not valid_perm_uri(args.uri) then
+	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
 	end
 	
 	-- We get the data for the claim to tell if it exists. If it doesn't
 	-- exist in the database, we create it on-demand.
-	local _, err_msg = db.claims.get_data(args.uri)
+	local _, err_msg = db.claims.get_data(params.uri)
 	
 	if err_msg == "uri doesnt exist" then
-		local success, err_msg = db.claims.new(args.uri)
+		local success, err_msg = db.claims.new(params.uri)
 		
 		if not success then 
 			if err_msg then
@@ -285,7 +285,7 @@ function api.downvote_claim(args)
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	end
 	
-	local total, err_msg = db.claims.downvote(args.uri)
+	local total, err_msg = db.claims.downvote(params.uri)
 	
 	if total and not err_msg then
 		return total
@@ -299,9 +299,9 @@ function api.downvote_claim(args)
 end
 
 --- Gets the URI of a claim given its claim index.
--- @tparam table args The table of arguments.
+-- @tparam table params The table of arguments.
 --
--- `args.claim_index` A signed int holding the index of the claim.
+-- `params.claim_index` A signed int holding the index of the claim.
 -- @treturn[1] string The full-length permanent LBRY URI associated with the
 -- provided index.
 -- @treturn[2] NULL If there is no URI associated with the provided claim index.
@@ -311,14 +311,14 @@ end
 -- [server] -> {"jsonrpc": "2.0", "id": 1,
 -- 	"result": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
 -- }
-function api.get_claim_uri(args)
-	if type(args.claim_index) ~= "number" then
+function api.get_claim_uri(params)
+	if type(params.claim_index) ~= "number" then
 		return nil, make_error"'claim_index' must be a number"
-	elseif args.claim_index % 1 ~= 0 then
+	elseif params.claim_index % 1 ~= 0 then
 		return nil, make_error"'claim_index' must be an int"
 	end
 	
-	local uri, err_msg = db.claims.get_uri(args.claim_index)
+	local uri, err_msg = db.claims.get_uri(params.claim_index)
 	
 	if uri and not err_msg then
 		return uri
@@ -334,9 +334,9 @@ function api.get_claim_uri(args)
 end
 
 --- Returns all top-level comments on a claim.
--- @tparam table args The table of arguments.
+-- @tparam table params The table of arguments.
 --
--- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
 -- @treturn[1] table An array of top-level comments.
@@ -370,15 +370,15 @@ end
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": [...]}
-function api.get_claim_comments(args)
-	if type(args.uri) ~= "string" then
+function api.get_claim_comments(params)
+	if type(params.uri) ~= "string" then
 		return nil, make_error"'uri' must be a string"
-	elseif not valid_perm_uri(args.uri) then
+	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
 	end
 	
-	local tlcs, err_msg = db.claims.get_comments(args.uri)
+	local tlcs, err_msg = db.claims.get_comments(params.uri)
 	
 	if err_msg == "uri doesnt exist" then
 		return json.null
