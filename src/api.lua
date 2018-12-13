@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.0.0"
+local api_VERSION = "0.1.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -146,6 +146,23 @@ end
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
 -- @treturn[1] table The data associated with that URI, if the URI has data.
+--
+-- Fields:
+--
+-- `claim_index`: An int holding the index of the claim.
+--
+-- `lbry_perm_uri`: The represented permanent LBRY claim's URI. Includes the
+-- "lbry://".
+--
+-- `add_time`: An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds. Must be >= 0.
+--
+-- `upvotes`: An int representing the amount of upvotes for that claim. Must
+-- be >= 0, defaults to 0.
+--
+-- `downvotes`: An int representing the amount of downvotes for that claim.
+-- Must be >= 0, defaults to 0.
+--
 -- @treturn[2] NULL There is no associated data.
 -- @usage {"jsonrpc": "2.0", "method": "get_claim_data", "id": 1, "params": {
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
@@ -168,7 +185,112 @@ function api.get_claim_data(args)
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	else
-		return nil, make_error("unknown", error_code.INTERNAL)
+		ngx.log(ngx.ERR, "weird error [get_claim_data]")
+		return nil, make_error("unknown", error_code.UNKNOWN)
+	end
+end
+
+--- Upvotes a claim and returns the new total amount of upvotes.
+-- @tparam table args The table of arguments.
+--
+-- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- If the URI isn't valid/acceptable, the function will return with an
+-- `error_code.INVALID_URI` response.
+-- @treturn int The new total amount of upvotes.
+-- @usage {"jsonrpc": "2.0", "method": "upvote_claim", "id": 1, "params": {
+-- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 5}
+function api.upvote_claim(args)
+	if type(args.uri) ~= "string" then
+		return nil, make_error"'uri' must be a string"
+	elseif not valid_perm_uri(args.uri) then
+		return nil, make_error("'uri' unacceptable form",
+		                       error_code.INVALID_URI)
+	end
+	
+	-- We get the data for the claim to tell if it exists. If it doesn't
+	-- exist in the database, we create it on-demand.
+	local _, err_msg = db.claims.get_data(args.uri)
+	
+	if err_msg == "uri doesnt exist" then
+		local success, err_msg = db.claims.new(args.uri)
+		
+		if not success then 
+			if err_msg then
+				return nil, make_error(err_msg,
+				                       error_code.INTERNAL)
+			else
+				return nil, make_error("unknown",
+				                       error_code.UNKNOWN)
+			end
+		end
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	end
+	
+	local total, err_msg = db.claims.upvote(args.uri)
+	
+	if total and not err_msg then
+		return total
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		ngx.log(ngx.ERR, "weird error [upvote_claim]: (" .. total ..
+		        ", " .. err_msg .. ")")
+		return nil, make_error("unknown", error_code.UNKNOWN)
+	end
+end
+
+--- Downvotes a claim and returns the new total amount of downvotes.
+-- @tparam table args The table of arguments.
+--
+-- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- If the URI isn't valid/acceptable, the function will return with an
+-- `error_code.INVALID_URI` response.
+-- @treturn int The new total amount of downvotes.
+-- @usage {"jsonrpc": "2.0", "method": "downvote_claim", "id": 1, "params": {
+-- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 5}
+function api.downvote_claim(args)
+	if type(args.uri) ~= "string" then
+		return nil, make_error"'uri' must be a string"
+	elseif not valid_perm_uri(args.uri) then
+		return nil, make_error("'uri' unacceptable form",
+		                       error_code.INVALID_URI)
+	end
+	
+	-- We get the data for the claim to tell if it exists. If it doesn't
+	-- exist in the database, we create it on-demand.
+	local _, err_msg = db.claims.get_data(args.uri)
+	
+	if err_msg == "uri doesnt exist" then
+		local success, err_msg = db.claims.new(args.uri)
+		
+		if not success then 
+			if err_msg then
+				return nil, make_error(err_msg,
+				                       error_code.INTERNAL)
+			else
+				return nil, make_error("unknown",
+				                       error_code.UNKNOWN)
+			end
+		end
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	end
+	
+	local total, err_msg = db.claims.downvote(args.uri)
+	
+	if total and not err_msg then
+		return total
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		ngx.log(ngx.ERR, "weird error [downvote_claim]: (" .. total ..
+		        ", " .. err_msg .. ")")
+		return nil, make_error("unknown", error_code.UNKNOWN)
 	end
 end
 
