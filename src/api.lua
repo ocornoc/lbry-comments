@@ -139,6 +139,39 @@ function api.status()
 	}
 end
 
+--- Returns the data associated with a claim.
+-- @tparam table args The table of arguments.
+--
+-- `args.uri` A string containing a full-length permanent LBRY claim URI.
+-- If the URI isn't valid/acceptable, the function will return with an
+-- `error_code.INVALID_URI` response.
+-- @treturn[1] table The data associated with that URI, if the URI has data.
+-- @treturn[2] NULL There is no associated data.
+-- @usage {"jsonrpc": "2.0", "method": "get_claim_data", "id": 1, "params": {
+-- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {...}}
+function api.get_claim_data(args)
+	if type(args.uri) ~= "string" then
+		return nil, make_error"'uri' must be a string"
+	elseif not valid_perm_uri(args.uri) then
+		return nil, make_error("'uri' unacceptable form",
+		                       error_code.INVALID_URI)
+	end
+	
+	local data, err_msg = db.claims.get_data(args.uri)
+	
+	if data and not err_msg then
+		return data
+	elseif err_msg == "claim doesnt exist" then
+		return json.null
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		return nil, make_error("unknown", error_code.INTERNAL)
+	end
+end
+
 --------------------------------------------------------------------------------
 
 return api
