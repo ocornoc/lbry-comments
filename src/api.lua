@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 local db = require "db"
 local json = require "cjson"
 local api = {}
+local error_code = {}
 
 local api_VERSION = "0.0.0"
 
@@ -39,25 +40,61 @@ local api_VERSION = "0.0.0"
 -- @section helpers
 -- @local
 
---- This returns a JSON-RPC error response object.
--- `id` can be `nil`, JSON `NULL`, a number, or a string.
--- WARNING: will *not* throw if the type is wrong.
+--- Returns part of a JSON-RPC error response object.
+-- WARNING: will *not* throw if a type is wrong.
 -- @tparam string message The concise error descriptor or reason.
--- @tparam[opt=-32600] int code The error code.
--- @param[opt=null] id The ID of the error's recipient.
--- @treturn table The JSON-RPC error response object, not yet JSON-encoded.
+-- @tparam[opt=-32602] int code The error code.
+-- @treturn table The partial JSON-RPC error response, not yet JSON-encoded.
 -- @usage make_error("Dude, did you just keyspam?")  --> table
--- @usage make_error("Nerds beware!", 20, "bob")     --> table
-local function make_error(message, code, id)
+-- @usage make_error("Nerds beware!", 20)     --> table
+local function make_error(message, code)
 	return {
-		jsonrpc = "2.0",
-		error = {
-			code = code or -32600,
-			message = message,
-		},
-		id = id or json.null,
+		code = code or -32602,
+		message = message,
 	}
 end
+
+--- Returns whether the given URI is acceptable.
+-- In order to ease server load, all given LBRY claim URIs must be full-length
+-- permanent claim-id URIs. This allows the server to not have to resolve claims
+-- and to not have to check for claim URI outbidding. More info at:
+--
+-- https://github.com/lbryio/lbry.tech/blob/master/documents/resources/uri.md
+-- @tparam string uri The URI to validate.
+-- @treturn boolean Whether or not the URI is acceptable.
+-- @usage valid_perm_uri("lbry://one")  --> false
+-- @usage
+-- valid_perm_uri("lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c")
+-- --> true
+local function valid_perm_uri(uri)
+	local success = uri:match("^lbry://[%w%-]+#([%da-f]+)$")
+	
+	if success then
+		return success:len() == 40
+	else
+		return false
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Error Codes
+-- @section errcodes
+
+--- A table of predefined error codes.
+-- @table error_code
+
+--- An unknown or very miscellaneous error.
+-- Value: -1
+error_code.UNKNOWN = -1
+--- An internal error.
+-- Value: -32603
+error_code.INTERNAL = -32603
+--- Invalid parameters.
+-- Value: -32602
+error_code.INVALID_PARAMS = -32602
+--- Invalid claim URI.
+-- Value: 1
+error_code.INVALID_URI = 1
 
 --------------------------------------------------------------------------------
 -- API
