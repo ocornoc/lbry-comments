@@ -97,8 +97,8 @@ error_code.INVALID_PARAMS = -32602
 error_code.INVALID_URI = 1
 
 --------------------------------------------------------------------------------
--- API
--- @section pubapi
+-- Miscellaneous API
+-- @section pubapimisc
 
 --- Returns the string "pong".
 -- This function is hyper-optimized and uses a lot of very high-level computer
@@ -138,6 +138,10 @@ function api.status()
 		db_version = db._VERSION,
 	}
 end
+
+--------------------------------------------------------------------------------
+-- Claim API
+-- @section pubapiclaim
 
 --- Returns the data associated with a claim.
 -- @tparam table args The table of arguments.
@@ -384,6 +388,10 @@ function api.get_claim_comments(args)
 		return tlcs
 	end
 end
+
+--------------------------------------------------------------------------------
+-- Comment API
+-- @section pubapicomment
 
 --------------------------------------------------------------------------------
 
