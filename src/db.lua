@@ -704,7 +704,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	end
 	
 	local curs, err_msg = accouts:execute(
-	 "SELECT * FROM comments WHERE parent_com = NULL AND claim_index = " ..
+	 "SELECT * FROM comments WHERE parent_com IS NULL AND claim_index = " ..
 	 claim_index .. ";"
 	)
 	
@@ -713,11 +713,13 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	end
 	
 	local results = {}
-	local com_data
+	local com_data = {}
 	
-	repeat
+	while curs:fetch(com_data, int_ind) do
 		table.insert(results, com_data)
-	until not curs:fetch(com_data, int_ind)
+	end
+	
+	curs:close()
 	
 	return results
 end

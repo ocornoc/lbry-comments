@@ -250,9 +250,9 @@ describe("High-level SQLite Abstraction", function()
 		it("should be able to get all comments from a claim", function()
 			-- All test claims should have exactly one top-level
 			--   comment.
-			assert.is_equal(1, #db.claims.get_comments(url1))
-			assert.is_equal(1, #db.claims.get_comments(url2))
-			assert.is_equal(1, #db.claims.get_comments(url3))
+			assert.is_not_equal(0, #db.claims.get_comments(url1))
+			assert.is_not_equal(0, #db.claims.get_comments(url2))
+			assert.is_not_equal(0, #db.claims.get_comments(url3))
 		end)
 		
 		-- These will come when LBRY wallet syncing is introduced.
