@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.1.0"
+local api_VERSION = "0.2.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -289,6 +289,41 @@ function api.downvote_claim(args)
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	else
 		ngx.log(ngx.ERR, "weird error [downvote_claim]: (" .. total ..
+		        ", " .. err_msg .. ")")
+		return nil, make_error("unknown", error_code.UNKNOWN)
+	end
+end
+
+--- Gets the URI of a claim given its claim index.
+-- @tparam table args The table of arguments.
+--
+-- `args.claim_index` A signed int holding the index of the claim.
+-- @treturn[1] string The full-length permanent LBRY URI associated with the
+-- provided index.
+-- @treturn[2] NULL If there is no URI associated with the provided claim index.
+-- @usage {"jsonrpc": "2.0", "method": "get_claim_uri", "id": 1, "params": {
+-- 	"claim_index": 1
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1,
+-- 	"result": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
+-- }
+function api.get_claim_uri(args)
+	if type(args.claim_index) ~= "number" then
+		return nil, make_error"'claim_index' must be a number"
+	elseif args.claim_index % 1 ~= 0 then
+		return nil, make_error"'claim_index' must be an int"
+	end
+	
+	local uri, err_msg = db.claims.get_uri(args.claim_index)
+	
+	if uri and not err_msg then
+		return uri
+	elseif err_msg == "uri not found" then
+		return json.null
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		ngx.log(ngx.ERR, "weird error [get_claim_uri]: (" .. total ..
 		        ", " .. err_msg .. ")")
 		return nil, make_error("unknown", error_code.UNKNOWN)
 	end
