@@ -144,7 +144,7 @@ end
 -- @section pubapiclaim
 
 --- Returns the data associated with a claim.
--- @tparam table params The table of arguments.
+-- @tparam table params The table of parameters.
 --
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
@@ -159,13 +159,11 @@ end
 -- "lbry://".
 --
 -- `add_time`: An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds. Must be >= 0.
+-- database, stored as UTC Epoch seconds.
 --
--- `upvotes`: An int representing the amount of upvotes for that claim. Must
--- be >= 0, defaults to 0.
+-- `upvotes`: An int representing the amount of upvotes for that claim.
 --
 -- `downvotes`: An int representing the amount of downvotes for that claim.
--- Must be >= 0, defaults to 0.
 --
 -- @treturn[2] NULL There is no associated data.
 -- @usage {"jsonrpc": "2.0", "method": "get_claim_data", "id": 1, "params": {
@@ -195,7 +193,7 @@ function api.get_claim_data(params)
 end
 
 --- Upvotes a claim and returns the new total amount of upvotes.
--- @tparam table params The table of arguments.
+-- @tparam table params The table of parameters.
 --
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
@@ -247,7 +245,7 @@ function api.upvote_claim(params)
 end
 
 --- Downvotes a claim and returns the new total amount of downvotes.
--- @tparam table params The table of arguments.
+-- @tparam table params The table of parameters.
 --
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
@@ -299,7 +297,7 @@ function api.downvote_claim(params)
 end
 
 --- Gets the URI of a claim given its claim index.
--- @tparam table params The table of arguments.
+-- @tparam table params The table of parameters.
 --
 -- `params.claim_index` A signed int holding the index of the claim.
 -- @treturn[1] string The full-length permanent LBRY URI associated with the
@@ -334,7 +332,7 @@ function api.get_claim_uri(params)
 end
 
 --- Returns all top-level comments on a claim.
--- @tparam table params The table of arguments.
+-- @tparam table params The table of parameters.
 --
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
@@ -396,7 +394,7 @@ end
 --- Creates a top-level comment and returns its ID.
 -- WARNING: The function db.comments.new causes a data race! Make sure to spit
 -- on the devs until they fix it.
--- @tparam table params The table of arguments.
+-- @tparam table params The table of parameters.
 --
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
