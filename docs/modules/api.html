@@ -1,0 +1,318 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>LBRY Comments Documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>LBRY Comments</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Error_Codes">Error Codes </a></li>
+<li><a href="#API">API </a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/spec.crypto_spec.html">spec.crypto_spec</a></li>
+  <li><a href="../modules/spec.db_spec.html">spec.db_spec</a></li>
+  <li><strong>api</strong></li>
+  <li><a href="../modules/crypto.html">crypto</a></li>
+  <li><a href="../modules/db.html">db</a></li>
+  <li><a href="../modules/server.html">server</a></li>
+</ul>
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/README.md.html">README</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>api</code></h1>
+<p>The public-facing API for LBRY-Comments.</p>
+<p>
+
+</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>Copyright</strong>: 2018 Grayson Burton and Oleg Silkin</li>
+        <li><strong>License</strong>: GNU AGPLv3</li>
+        <li><strong>Author</strong>: Grayson Burton</li>
+    </ul>
+
+
+<h2><a href="#Error_Codes">Error Codes </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#error_code">error_code</a></td>
+	<td class="summary">A table of predefined error codes.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#error_code.UNKNOWN">error_code.UNKNOWN</a></td>
+	<td class="summary">An unknown or very miscellaneous error.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#error_code.INTERNAL">error_code.INTERNAL</a></td>
+	<td class="summary">An internal error.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#error_code.INVALID_PARAMS">error_code.INVALID_PARAMS</a></td>
+	<td class="summary">Invalid parameters.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#error_code.INVALID_URI">error_code.INVALID_URI</a></td>
+	<td class="summary">Invalid claim URI.</td>
+	</tr>
+</table>
+<h2><a href="#API">API </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#ping">ping ()</a></td>
+	<td class="summary">Returns the string "pong".</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#status">status ()</a></td>
+	<td class="summary">Returns the status and versions of the server components.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_claim_data">get_claim_data (args)</a></td>
+	<td class="summary">Returns the data associated with a claim.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Error_Codes"></a>Error Codes </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "error_code"></a>
+    <strong>error_code</strong>
+    </dt>
+    <dd>
+    A table of predefined error codes.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "error_code.UNKNOWN"></a>
+    <strong>error_code.UNKNOWN</strong>
+    </dt>
+    <dd>
+    An unknown or very miscellaneous error.
+ Value: -1
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "error_code.INTERNAL"></a>
+    <strong>error_code.INTERNAL</strong>
+    </dt>
+    <dd>
+    An internal error.
+ Value: -32603
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "error_code.INVALID_PARAMS"></a>
+    <strong>error_code.INVALID_PARAMS</strong>
+    </dt>
+    <dd>
+    Invalid parameters.
+ Value: -32602
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "error_code.INVALID_URI"></a>
+    <strong>error_code.INVALID_URI</strong>
+    </dt>
+    <dd>
+    Invalid claim URI.
+ Value: 1
+
+
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="API"></a>API </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "ping"></a>
+    <strong>ping ()</strong>
+    </dt>
+    <dd>
+    Returns the string "pong".
+ This function is hyper-optimized and uses a lot of very high-level computer
+ science techniques in order to produce the output it does.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        "pong"
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"ping"</span>, <span class="string">"id"</span>: <span class="number">1</span>} -&gt; [server]
+ [server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="string">"pong"</span>}</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "status"></a>
+    <strong>status ()</strong>
+    </dt>
+    <dd>
+    Returns the status and versions of the server components.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         status</p>
+
+<p> <code>status.is_running</code> is a boolean, always <code>true</code>.</p>
+
+<p> <code>status.is_db_running</code> is a boolean, describing whether the database is
+ currently running.</p>
+
+<p> <code>status.api_version</code> is a string, representing the SemVer 2.0.0 version
+ of the API.</p>
+
+<p> <code>status.db_version</code> is a string, representing the SemVer 2.0.0 version
+ of the database.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"status"</span>, <span class="string">"id"</span>: <span class="number">1</span>} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: {
+	<span class="string">"is_running"</span>: <span class="keyword">true</span>,
+	<span class="string">"is_db_running"</span>: <span class="keyword">true</span>,
+	<span class="string">"api_version"</span>: <span class="string">"0.0.0"</span>,
+	<span class="string">"db_version"</span>: <span class="string">"0.0.3"</span>
+}}</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_claim_data"></a>
+    <strong>get_claim_data (args)</strong>
+    </dt>
+    <dd>
+    Returns the data associated with a claim.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">args</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         The table of arguments.</p>
+
+<p> <code>args.uri</code> A string containing a full-length permanent LBRY claim URI.
+ If the URI isn't valid/acceptable, the function will return with an
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        The data associated with that URI, if the URI has data.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+
+           <span class="types"><span class="type">NULL</span></span>
+        There is no associated data.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"get_claim_data"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: {...}}</pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2018-12-12 17:51:34 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

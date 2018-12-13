@@ -4,9 +4,22 @@
 
 ***Please make sure to change the file `seed`.***
 
-## Busted support
+## How to use
 
-If you have busted installed, you can run busted from the project directory in order to run the tests.
+You must use the file `start` as it supplies the server with some necessary global variables.
+
+Run `./start -h` for more details.
+
+## Dependencies
+
+* [libsodium](https://github.com/jedisct1/libsodium)
+* [OpenResty](https://openresty.org/en/)
+* [LuaSQL](https://keplerproject.github.io/luasql/) (using SQLite3)
+* [busted](https://olivinelabs.com/busted/) (only for debug)
+* [LDoc](https://github.com/stevedonovan/LDoc) (only for documentation gen)
+
+LuaSQL and Busted must be installed using appropriate OPM packages or manually installed in OpenResty's tree.
+LDoc doesn't have to be installed in the tree.
 
 ## Things to come
 
@@ -16,7 +29,13 @@ If you have busted installed, you can run busted from the project directory in o
 
 - [x] busted support
 - [x] comment u/d-voting
-- [ ] claim/comment deletion
 - [x] LDoc/LuaDoc-style documentation
-- [ ] comment editing
+
+These will come near the end of the project:
+
 - [ ] posting backups to LBRY
+
+These are planned to be completed at an indeterminate time, due to factors outside of our control:
+
+- [ ] claim/comment deletion
+- [ ] comment editing

@@ -27,9 +27,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -- @author Grayson Burton
 
 --------------------------------------------------------------------------------
+-- Options
+-- @section options
+-- @local
+
+--- The path to the database, relative to the top path.
+local db_rpath = "accoutrements.db"
+
+--- The path to the directory containing backups, relative to the top path.
+-- Will be created if not existing.
+local backup_rpath = "backups"
+
+--------------------------------------------------------------------------------
 -- Constants
 -- @section constants
 -- @local
+
+--- Uses LuaFileSystem for its directory creation.
+local lfs = require "lfs"
 
 --- Uses luasql.sqlite3.
 local sql_driver = require "luasql.sqlite3"
@@ -38,19 +53,13 @@ local crypto = require "crypto"
 --- @{sql_driver} requires this setup.
 -- No idea why to be honest, but whatever.
 local sql = sql_driver.sqlite3()
---- Uses luasocket.
--- No networking components are actually used, it's just for time.
-local sock = require "socket"
---- Uses luasocket's MIME submodule.
--- Used for its Base64 facilities.
-local mime = require "mime"
+--- Uses ngx.
+local ngx = require "ngx"
 
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "0.0.1"
---- The path to the database, relative to the script.
-local db_path = "accoutrements.db"
+local DB_VERSION = "0.1.0"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -58,6 +67,26 @@ local last_backup_time = 0
 -- This exists to put a hard stop to any form of backup spam, whether from
 -- internal error or external maliciousness.
 local minimum_backup_time = 3600
+
+--- The path to the database.
+local db_path = _G.toppath .. "/" .. db_rpath
+
+--- The path to the backups folder.
+-- It is created dynamically if it doesn't exist.
+local backup_path = _G.toppath .. "/" .. backup_rpath
+
+-- Here, we test if it exists, and create it if it doesn't.
+do
+	-- The directory file.
+	local backupdirf = io.open(backup_path, "rb")
+	
+	if backupdirf then
+		-- The directory already exists.
+		backupdirf:close()
+	else
+		assert(lfs.mkdir(backup_path))
+	end
+end
 
 --------------------------------------------------------------------------------
 -- Helper Functions
@@ -69,7 +98,7 @@ local minimum_backup_time = 3600
 -- @treturn int
 -- @usage get_unix_time()
 local function get_unix_time()
-	return math.floor(sock.gettime())
+	return ngx.time()
 end
 
 --- Encodes a string in Base64.
@@ -78,18 +107,18 @@ end
 -- @see b64_decode
 -- @usage b64_encode("hello") --> "aGVsbG8="
 local function b64_encode(plain_str)
-	return (mime.b64(plain_str))
+	return ngx.encode_base64(plain_str)
 end
 
 --- Decodes a Base64-encoded string.
--- The return string is the largest section from the start of the input that
--- can be decoded. It stops at the first undecodable symbol(s).
+-- The return string is the decoded string on success, or nil on error.
 -- @tparam string encoded_str The encoded input.
--- @treturn string The decoded output.
+-- @treturn[1] string The decoded output.
+-- @treturn[2] nil If the input isn't well-formed.
 -- @see b64_encode
 -- @usage b64_decode("aGVsbG8=") --> "hello"
 local function b64_decode(encoded_str)
-	return (mime.unb64(encoded_str))
+	return ngx.decode_base64(plain_str)
 end
 
 --- Returns whether a table is empty.
@@ -283,13 +312,21 @@ local function new_backup_entry(size)
 		return nil, err_msg
 	end
 	
+	local time = get_unix_time()
+	
 	-- Now, to insert it into the database.
 	local _, err_msg = accouts:execute([[
 	 INSERT INTO backups(creation_time, totalcomments, totalclaims, size_kb)
-	 VALUES (]] .. get_unix_time() .. ", " .. com_count .. ", " ..
-	 claim_count .. ", " .. size .. ");")
+	 VALUES (]] .. time .. ", " .. com_count .. ", " .. claim_count ..
+	 ", " .. size .. ");")
 	
-	return not err_msg or nil, err_msg
+	if err_msg then
+		return nil, err_msg
+	else
+		last_backup_time = time
+		
+		return true
+	end
 end
 
 --- Returns the ID of the latest comment in @{accouts.comments}.
@@ -355,10 +392,10 @@ function _M.stop()
 			
 			return true
 		else
-			return nil, "There are still cursors open"
+			return nil, "cursors open"
 		end
 	else
-		return nil, "The database is already stopped"
+		return nil, "already stopped"
 	end
 end
 
@@ -371,7 +408,7 @@ end
 -- @usage db.start()
 function _M.start()
 	if running then
-		return nil, "The database is already started"
+		return nil, "already started"
 	else
 		accouts = sql:connect(db_path)
 		running = true
@@ -423,7 +460,7 @@ function _M.backup()
 		return nil, err_msg
 	end
 	
-	local bk_file, err_msg = io.open(file_name, "w+b")
+	local bk_file, err_msg = io.open(backup_path .. file_name, "w+b")
 	
 	if err_msg then
 		db_file:close()
@@ -460,7 +497,7 @@ function _M.backup()
 	-- Write 80 "="s on a new line at the end, followed by the signature on
 	--   the next line.
 	bk_file:write("\n" .. ("="):rep(80) .. "\n")
-	bk_file:write(b64_encode(sig_obj:sign()))
+	bk_file:write(b64_encode(sig_obj:get_sig()))
 	
 	bk_file:flush()
 	
@@ -508,8 +545,7 @@ end
 -- @usage db.claims.get_data("lbry://another_one", true) --> table
 function _M.claims.get_data(claim_uri, int_ind)
 	if type(claim_uri) ~= "string" then
-		return nil, "The claim URI needs to be a string, is a " ..
-		            type(claim_uri) .. "."
+		return nil, "uri not string"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -532,8 +568,7 @@ function _M.claims.get_data(claim_uri, int_ind)
 	if not is_empty_table(results) then
 		return results
 	else
-		return nil, "The claim URI '" .. claim_uri ..
-			    "' does not exist."
+		return nil, "uri doesnt exist"
 	end
 end
 
@@ -551,10 +586,9 @@ function _M.claims.upvote(claim_uri, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to upvote needs to be a number, is a " ..
-		            type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to upvote is fractional, not an integer."
+		return nil, "times not int"
 	end
 	
 	local data, err_msg = _M.claims.get_data(claim_uri)
@@ -589,11 +623,9 @@ function _M.claims.downvote(claim_uri, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to downvote needs to be a number, " ..
-		            "is a " .. type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to downvote is fractional, not an " ..
-		            "integer."
+		return nil, "times not int"
 	end
 	
 	local data, err_msg = _M.claims.get_data(claim_uri)
@@ -623,7 +655,7 @@ end
 -- @usage db.claims.downvote(20) --> a LBRY URI
 function _M.claims.get_uri(claim_index)
 	if type(claim_index) ~= "number" then
-		return nil, "'claim_index' must be a number"
+		return nil, "index not number"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -641,7 +673,7 @@ function _M.claims.get_uri(claim_index)
 	if results then
 		return results
 	else
-		return nil, "URI not found"
+		return nil, "uri not found"
 	end
 end
 
@@ -668,7 +700,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	local claim_index = claim_data.claim_index
 	
 	if not claim_index or type(claim_index) ~= "number" then
-		return nil, "The stored data is weird, please report this bug!"
+		return nil, "weird data"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -715,7 +747,7 @@ function _M.comments.new(claim_uri, poster, message)
 			local result, err_msg = _M.claims.new(claim_uri)
 			-- If that doesn't work, just give up.
 			if err_msg then
-				return nil, "Failed to create claim on demand"
+				return nil, "failed on-demand claim"
 			-- Otherwise, retry now that you've created the claim.
 			else
 				return _M.comments.new(claim_uri, poster,
@@ -729,16 +761,16 @@ function _M.comments.new(claim_uri, poster, message)
 	
 	-- 'message' must be a string and mustn't be empty nor only whitespace.
 	if type(message) ~= "string" then
-		return nil, "Invalid 'message' type"
+		return nil, "message not string"
 	elseif message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'message' contents"
+		return nil, "message only whitespace"
 	end
 	
 	-- 'poster' must be a string and mustn't be empty nor only whitespace.
 	if type(poster) ~= "string" then
-		return nil, "Invalid 'poster' type"
+		return nil, "poster not string"
 	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'poster' contents"
+		return nil, "poster only whitepsace"
 	end
 	
 	local claim_index = claim_data.claim_index
@@ -780,16 +812,16 @@ function _M.comments.new_reply(parent_id, poster, message)
 	
 	-- 'message' must be a string and mustn't be empty nor only whitespace.
 	if type(message) ~= "string" then
-		return nil, "Invalid 'message' type"
+		return nil, "message not string"
 	elseif message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'message' contents"
+		return nil, "message only whitespace"
 	end
 	
 	-- 'poster' must be a string and mustn't be empty nor only whitespace.
 	if type(poster) ~= "string" then
-		return nil, "Invalid 'poster' type"
+		return nil, "poster not string"
 	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "Invalid 'poster' contents"
+		return nil, "poster only whitespace"
 	end
 	
 	local claim_index = parent_data.claim_index
@@ -826,7 +858,7 @@ end
 -- @usage db.comments.get_data(21, true) --> table
 function _M.comments.get_data(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
-		return nil, "'comment_id' must be a number"
+		return nil, "id not number"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -848,7 +880,7 @@ function _M.comments.get_data(comment_id, int_ind)
 	if not is_empty_table(results) then
 		return results
 	else
-		return nil, "Comment #" .. comment_id .. " does not exist."
+		return nil, "comment doesnt exist"
 	end
 end
 
@@ -865,7 +897,7 @@ end
 -- @usage db.comments.get_replies(21, true) --> table
 function _M.comments.get_replies(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
-		return nil, "'comment_id' must be a number"
+		return nil, "id not number"
 	end
 	
 	-- We fetch the parent comment data in order to check if the comment is
@@ -914,10 +946,9 @@ function _M.comments.upvote(comment_id, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to upvote needs to be a number, is a " ..
-		            type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to upvote is fractional, not an integer."
+		return nil, "times not an int"
 	end
 	
 	local data, err_msg = _M.comments.get_data(comment_id)
@@ -957,11 +988,9 @@ function _M.comments.downvote(comment_id, times)
 	if times == nil then
 		times = 1
 	elseif type(times) ~= "number" then
-		return nil, "The times to downvote needs to be a number, " ..
-		            "is a " .. type(times) .. "."
+		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "The times to downvote is fractional, not an " ..
-		            "integer."
+		return nil, "times not an int"
 	end
 	
 	local data, err_msg = _M.comments.get_data(comment_id)

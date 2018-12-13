@@ -5,8 +5,15 @@ return {
 		lua = "luajit"
 	},
 	
+	_all = {
+		["no-auto-insulate"] = true
+	},
+	
 	db = {
 		tags = "api",
-		verbose = true,
+	},
+	
+	crypto = {
+		tags = "api",
 	},
 }

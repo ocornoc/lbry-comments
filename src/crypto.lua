@@ -30,10 +30,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local ffi = require "ffi"
 
------------------------------------------OPTS------------------------------------
+---------------------------------------------------------------------------------
+-- Options
+-- @section options
+-- @local
 
--- The path to the file containing the keypair generation seed.
-local kseedfile_path = "seed"
+--- The path to the file containing the keypair generation seed.
+-- Relative to the master directory.
+-- @local
+local kseedfile_rpath = "seed"
 
 -----------------------------------------DECS------------------------------------
 
@@ -115,6 +120,9 @@ local sign_skbytes     = tonumber(sodium.crypto_sign_ed25519_secretkeybytes())
 -- libsodium returns -1 on failure, 0 on success, and 1 if it's already been
 --  initialized.
 assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
+
+--- The path to the key seed file.
+local kseedfile_path = _G.toppath .. "/" .. kseedfile_rpath
 
 --------------------------------------------------------------------------------
 -- Padding

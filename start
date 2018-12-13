@@ -1,0 +1,42 @@
+#!/bin/bash
+
+THIS_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="${THIS_PATH}/src/server.lua"
+
+# for LuaJIT
+EXEC0="_G.toppath=\"${THIS_PATH}\""
+EXEC1="_G.srcpath=_G.toppath..\"/src\""
+# for busted, as it has weird execution needs.
+EXEC0b="_G.toppath=\\\"${THIS_PATH}\\\""
+EXEC1b="_G.srcpath=_G.toppath..\\\"/src\\\""
+
+while getopts ":bhdD" opt; do
+	case $opt in
+		b)
+			busted -e "${EXEC0b}" -e "${EXEC1b}"
+			exit 0
+			;;
+		d)
+			ldoc ${THIS_PATH}
+			exit 0
+			;;
+		D)
+			ldoc -a ${THIS_PATH}
+			exit 0
+			;;
+		h)
+			echo "Run with \"-b\" to run busted"
+			echo "Run with \"-d\" to generate the doc"
+			echo "Run with \"-D\" to generate the doc, including local variables"
+			echo "Run with \"-h\" to print out the help"
+			echo "Run without args to run normally"
+			exit 0
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG"
+			exit 1
+			;;
+	esac
+done
+
+openresty -c ${THIS_PATH}/conf/develop.conf -p ${THIS_PATH}
