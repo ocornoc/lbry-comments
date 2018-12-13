@@ -117,9 +117,8 @@ function jrpc.dispatch_req(tab)
 	elseif type(tab.method) ~= "string" then
 		return jrpc.make_error("method not a string")
 	elseif tab.params ~= nil and
-	       tab.params ~= json.null and
 	       type(tab.params) ~= "table" then
-		return jrpc.make_error("params not nil/table/null")
+		return jrpc.make_error("params not nil/table")
 	elseif type(tab.id) ~= "string" and
 	       type(tab.id) ~= "number" and
 	       tab.id ~= nil and
