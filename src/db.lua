@@ -733,7 +733,7 @@ end
 -- @function new
 -- @tparam string claim_uri The permanent LBRY URI of the claim to comment on.
 -- @tparam string poster The name of the poster.
--- @tparam string claim_uri The message of the comment.
+-- @tparam string message The message of the comment.
 -- @treturn[1] int The comment ID now associated with this comment.
 -- @treturn[2] nil On error.
 -- @treturn[2] string The error message.
