@@ -10,6 +10,8 @@ EXEC1="_G.srcpath=_G.toppath..\"/src\""
 EXEC0b="_G.toppath=\\\"${THIS_PATH}\\\""
 EXEC1b="_G.srcpath=_G.toppath..\\\"/src\\\""
 
+mkdir -p ${THIS_PATH}/logs
+
 while getopts ":bhdD" opt; do
 	case $opt in
 		b)
