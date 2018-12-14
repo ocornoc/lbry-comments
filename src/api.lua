@@ -591,7 +591,7 @@ function api.get_comment_data(params)
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	else
-		ngx.log(ngx.ERR, "weird error [get_claim_data]")
+		ngx.log(ngx.ERR, "weird error [get_comment_data]")
 		return nil, make_error("unknown", error_code.UNKNOWN)
 	end
 end
