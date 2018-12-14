@@ -714,6 +714,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	
 	local results = {}
 	local com_data = {}
+	int_int = (int_ind and "n") or "a"
 	
 	while curs:fetch(com_data, int_ind) do
 		table.insert(results, com_data)
