@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.3.0"
+local api_VERSION = "0.4.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -169,7 +169,13 @@ end
 -- @usage {"jsonrpc": "2.0", "method": "get_claim_data", "id": 1, "params": {
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
 -- }} -> [server]
--- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {...}}
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {
+--  "claim_index": 1,
+--  "lbry_perm_uri": lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c",
+--  "add_time": 1544759333,
+--  "upvotes": 0,
+--  "downvotes": 0
+-- }}
 function api.get_claim_data(params)
 	if type(params.uri) ~= "string" then
 		return nil, make_error"'uri' must be a string"
@@ -350,7 +356,7 @@ end
 --
 -- `parent_com`: An int holding the `comment_index` field of another comment
 -- object that is the parent of this comment. Because these comments are always
--- top-level comments, the field is ommited (`nil`).
+-- top-level comments, the field is omitted (`nil`).
 --
 -- `post_time`: An int representing the time of the row's insertion into the
 -- database, stored as UTC Epoch seconds.
@@ -520,6 +526,72 @@ function api.reply(params)
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	else
+		return nil, make_error("unknown", error_code.UNKNOWN)
+	end
+end
+
+--- Gets the data for a comment object.
+-- @tparam table params The table of parameters.
+--
+-- `params.comm_index`: An int containing the ID of the comment that data is
+-- being requested for.
+-- @treturn[1] table A comment object.
+--
+-- Fields:
+--
+-- `comm_index`: An int holding the index of the comment.
+--
+-- `claim_index`: An int holding the index of the claims that this is a
+-- comment on.
+--
+-- `poster_name`: A string holding the name of the poster.
+--
+-- `parent_com`: An int holding the `comment_index` field of another comment
+-- object that is the parent of this comment. Because these comments are always
+-- top-level comments, the field is omitted (`nil`).
+--
+-- `post_time`: An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds.
+--
+-- `message`: A string holding the body of the comment.
+--
+-- `upvotes`: An int representing the amount of upvotes for that comment.
+--
+-- `downvotes`: An int representing the amount of downvotes for that
+-- comment.
+--
+-- @treturn[2] NULL The comment is not in the database.
+-- @usage {"jsonrpc": "2.0", "method": "get_comment_data", "id": 1,
+--  "params": {
+-- 	"comm_index": 1,
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {
+--  "comm_index": 1,
+--  "claim_index": 1,
+--  "poster_name": "cool",
+--  "parent_com": null,
+--  "post_time": 1544759333,
+--  "message": "whats up dude?",
+--  "upvotes": 0,
+--  "downvotes": 0
+-- }}
+function api.get_comment_data(params)
+	if type(params.comm_index) ~= "number" then
+		return nil, make_error"'comm_index' must be an int"
+	elseif params.comm_index % 1 ~= 0 then
+		return nil, make_error"'comm_index' must be an int"
+	end
+	
+	local data, err_msg = db.comments.get_data(params.comm_index)
+	
+	if data and not err_msg then
+		return data
+	elseif err_msg == "comment doesnt exist" then
+		return json.null
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		ngx.log(ngx.ERR, "weird error [get_claim_data]")
 		return nil, make_error("unknown", error_code.UNKNOWN)
 	end
 end

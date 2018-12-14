@@ -137,6 +137,10 @@
 	<td class="name" nowrap><a href="#reply">reply (params)</a></td>
 	<td class="summary">Creates a reply and returns its ID.</td>
 	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_comment_data">get_comment_data (params)</a></td>
+	<td class="summary">Gets the data for a comment object.</td>
+	</tr>
 </table>
 
 <br/>
@@ -350,7 +354,13 @@
         <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"get_claim_data"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
 	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>
 }} -&gt; [server]
-[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: {...}}</pre>
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: {
+ <span class="string">"claim_index"</span>: <span class="number">1</span>,
+ <span class="string">"lbry_perm_uri"</span>: lbry://lolkris#<span class="number">53</span>ecfd214b62f38b1bec9849b7a69127b30cd26c<span class="string">",
+ "</span>add_time<span class="string">": 1544759333,
+ "</span>upvotes<span class="string">": 0,
+ "</span>downvotes": <span class="number">0</span>
+}}</pre>
     </ul>
 
 </dd>
@@ -512,7 +522,7 @@
 
 <p> <code>parent_com</code>: An int holding the <code>comment_index</code> field of another comment
  object that is the parent of this comment. Because these comments are always
- top-level comments, the field is ommited (<code>nil</code>).</p>
+ top-level comments, the field is omitted (<code>nil</code>).</p>
 
 <p> <code>post_time</code>: An int representing the time of the row's insertion into the
  database, stored as UTC Epoch seconds.</p>
@@ -648,6 +658,82 @@
     </ul>
 
 </dd>
+    <dt>
+    <a name = "get_comment_data"></a>
+    <strong>get_comment_data (params)</strong>
+    </dt>
+    <dd>
+    Gets the data for a comment object.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">params</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         The table of parameters.</p>
+
+<p> <code>params.comm_index</code>: An int containing the ID of the comment that data is
+ being requested for.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         A comment object.</p>
+
+<p> Fields:</p>
+
+<p> <code>comm_index</code>: An int holding the index of the comment.</p>
+
+<p> <code>claim_index</code>: An int holding the index of the claims that this is a
+ comment on.</p>
+
+<p> <code>poster_name</code>: A string holding the name of the poster.</p>
+
+<p> <code>parent_com</code>: An int holding the <code>comment_index</code> field of another comment
+ object that is the parent of this comment. Because these comments are always
+ top-level comments, the field is omitted (<code>nil</code>).</p>
+
+<p> <code>post_time</code>: An int representing the time of the row's insertion into the
+ database, stored as UTC Epoch seconds.</p>
+
+<p> <code>message</code>: A string holding the body of the comment.</p>
+
+<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
+
+<p> <code>downvotes</code>: An int representing the amount of downvotes for that
+ comment.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+
+           <span class="types"><span class="type">NULL</span></span>
+        The comment is not in the database.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"get_comment_data"</span>, <span class="string">"id"</span>: <span class="number">1</span>,
+ <span class="string">"params"</span>: {
+	<span class="string">"comm_index"</span>: <span class="number">1</span>,
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: {
+ <span class="string">"comm_index"</span>: <span class="number">1</span>,
+ <span class="string">"claim_index"</span>: <span class="number">1</span>,
+ <span class="string">"poster_name"</span>: <span class="string">"cool"</span>,
+ <span class="string">"parent_com"</span>: null,
+ <span class="string">"post_time"</span>: <span class="number">1544759333</span>,
+ <span class="string">"message"</span>: <span class="string">"whats up dude?"</span>,
+ <span class="string">"upvotes"</span>: <span class="number">0</span>,
+ <span class="string">"downvotes"</span>: <span class="number">0</span>
+}}</pre>
+    </ul>
+
+</dd>
 </dl>
 
 
@@ -655,7 +741,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-12-13 10:15:19 </i>
+<i style="float:right;">Last updated 2018-12-14 00:26:33 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
