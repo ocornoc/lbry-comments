@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.4.0"
+local api_VERSION = "0.5.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -592,6 +592,44 @@ function api.get_comment_data(params)
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	else
 		ngx.log(ngx.ERR, "weird error [get_comment_data]")
+		return nil, make_error("unknown", error_code.UNKNOWN)
+	end
+end
+
+--- Upvotes a comment and returns the new total amount of upvotes.
+-- @tparam table params The table of parameters.
+--
+-- `params.comm_index`: An int containing the ID of the comment that is going to
+-- be upvoted.
+-- @treturn int The new total amount of upvotes.
+-- @usage {"jsonrpc": "2.0", "method": "upvote_comment", "id": 1, "params": {
+-- 	"comment_id": 1
+-- }} -> [server]
+-- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 1}
+function api.upvote_comment(params)
+	if type(params.comm_index) ~= "number" then
+		return nil, make_error"'comm_index' must be an int"
+	elseif params.comm_index % 1 ~= 0 then
+		return nil, make_error"'comm_index' must be an int"
+	end
+	
+	-- We get the data for the claim to tell if it exists. If it doesn't
+	-- exist in the database, we create it on-demand.
+	local _, err_msg = db.comments.get_data(params.comm_index)
+	
+	if err_msg then
+		return nil, make_error(err_msg)
+	end
+	
+	local total, err_msg = db.comments.upvote(params.comm_index)
+	
+	if total and not err_msg then
+		return total
+	elseif err_msg then
+		return nil, make_error(err_msg, error_code.INTERNAL)
+	else
+		ngx.log(ngx.ERR, "weird error [upvote_comment]: (" .. total ..
+		        ", " .. err_msg .. ")")
 		return nil, make_error("unknown", error_code.UNKNOWN)
 	end
 end
