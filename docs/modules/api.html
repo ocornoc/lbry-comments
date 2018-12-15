@@ -149,6 +149,10 @@
 	<td class="name" nowrap><a href="#downvote_comment">downvote_comment (params)</a></td>
 	<td class="summary">Downvotes a comment and returns the new total amount of downvotes.</td>
 	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#get_comment_replies">get_comment_replies (params)</a></td>
+	<td class="summary">Returns all direct replies to a comment.</td>
+	</tr>
 </table>
 
 <br/>
@@ -388,7 +392,11 @@
 
 <p> <code>params.uri</code>: A string containing a full-length permanent LBRY claim URI.
  If the URI isn't valid/acceptable, the function will return with an
- <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
+
+<p> <code>params.undo</code>: An optional boolean containing whether the upvote is being
+ undone. If this is true, then rather than giving a vote, a vote is being
+ retracted. Defaults to <code>false</code>.
         </li>
     </ul>
 
@@ -403,10 +411,15 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"upvote_claim"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"upvote_claim"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
 	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>
 }} -&gt; [server]
-[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">5</span>}</pre>
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">5</span>}</pre></li>
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"upvote_claim"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>,
+	<span class="string">"undo"</span>: <span class="keyword">true</span>,
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">4</span>}</pre></li>
     </ul>
 
 </dd>
@@ -426,7 +439,11 @@
 
 <p> <code>params.uri</code>: A string containing a full-length permanent LBRY claim URI.
  If the URI isn't valid/acceptable, the function will return with an
- <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
+
+<p> <code>params.undo</code>: An optional boolean containing whether the downvote is being
+ undone. If this is true, then rather than giving a vote, a vote is being
+ retracted. Defaults to <code>false</code>.
         </li>
     </ul>
 
@@ -441,10 +458,15 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"downvote_claim"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"downvote_claim"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
 	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>
 }} -&gt; [server]
-[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">5</span>}</pre>
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">5</span>}</pre></li>
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"downvote_claim"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>,
+	<span class="string">"undo"</span>: <span class="keyword">true</span>,
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">4</span>}</pre></li>
     </ul>
 
 </dd>
@@ -757,7 +779,11 @@
          The table of parameters.</p>
 
 <p> <code>params.comm_index</code>: An int containing the ID of the comment that is going to
- be upvoted.
+ be upvoted.</p>
+
+<p> <code>params.undo</code>: An optional boolean containing whether the upvote is being
+ undone. If this is true, then rather than giving a vote, a vote is being
+ retracted. Defaults to <code>false</code>.
         </li>
     </ul>
 
@@ -778,10 +804,15 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"upvote_comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"upvote_comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
 	<span class="string">"comment_id"</span>: <span class="number">1</span>
 }} -&gt; [server]
-[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">1</span>}</pre>
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">1</span>}</pre></li>
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"upvote_comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+	<span class="string">"comment_id"</span>: <span class="number">1</span>,
+	<span class="string">"undo"</span>: <span class="keyword">true</span>,
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">0</span>}</pre></li>
     </ul>
 
 </dd>
@@ -800,7 +831,11 @@
          The table of parameters.</p>
 
 <p> <code>params.comm_index</code>: An int containing the ID of the comment that is going to
- be downvoted.
+ be downvoted.</p>
+
+<p> <code>params.undo</code>: An optional boolean containing whether the downvote is being
+ undone. If this is true, then rather than giving a vote, a vote is being
+ retracted. Defaults to <code>false</code>.
         </li>
     </ul>
 
@@ -821,10 +856,82 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"downvote_comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"downvote_comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
 	<span class="string">"comment_id"</span>: <span class="number">1</span>
 }} -&gt; [server]
-[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">1</span>}</pre>
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">1</span>}</pre></li>
+        <li><pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"downvote_comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"params"</span>: {
+	<span class="string">"comment_id"</span>: <span class="number">1</span>,
+	<span class="string">"undo"</span>: <span class="keyword">true</span>,
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">0</span>}</pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "get_comment_replies"></a>
+    <strong>get_comment_replies (params)</strong>
+    </dt>
+    <dd>
+    Returns all direct replies to a comment.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">params</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         The table of parameters.</p>
+
+<p> <code>params.comm_index</code>: An int containing the ID of the comment that is going to
+ be downvoted.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         An array of replies.</p>
+
+<p> Fields for each comment:</p>
+
+<p> <code>comm_index</code>: An int holding the index of the comment.</p>
+
+<p> <code>claim_index</code>: An int holding the index of the claims that this is a
+ comment on.</p>
+
+<p> <code>poster_name</code>: A string holding the name of the poster.</p>
+
+<p> <code>parent_com</code>: An int holding the <code>comment_index</code> field of another comment
+ object that is the parent of this comment. Because these comments are always
+ top-level comments, the field is omitted (<code>nil</code>).</p>
+
+<p> <code>post_time</code>: An int representing the time of the row's insertion into the
+ database, stored as UTC Epoch seconds.</p>
+
+<p> <code>message</code>: A string holding the body of the comment.</p>
+
+<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
+
+<p> <code>downvotes</code>: An int representing the amount of downvotes for that
+ comment.
+    </ol>
+     <h3>Or</h3>
+    <ol>
+
+           <span class="types"><span class="type">NULL</span></span>
+        There is no comment with the given ID.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"get_comment_replies"</span>, <span class="string">"id"</span>: <span class="number">1</span>,
+ <span class="string">"params"</span>: {
+	<span class="string">"comm_index"</span>: <span class="number">20</span>
+}} -&gt; [server]
+[server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: [...]}</pre>
     </ul>
 
 </dd>
@@ -835,7 +942,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-12-14 14:25:37 </i>
+<i style="float:right;">Last updated 2018-12-15 10:57:53 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
