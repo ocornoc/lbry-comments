@@ -59,7 +59,7 @@ local ngx = require "ngx"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "0.1.0"
+local DB_VERSION = "1.0.0"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0

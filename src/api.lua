@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.6.0"
+local api_VERSION = "1.0.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
