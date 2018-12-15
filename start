@@ -26,10 +26,15 @@ while getopts ":bhdD" opt; do
 			ldoc -a ${THIS_PATH}
 			exit 0
 			;;
+		q)
+			openresty -p ${THIS_PATH} -s quit
+			exit 0
+			;;
 		h)
 			echo "Run with \"-b\" to run busted"
 			echo "Run with \"-d\" to generate the doc"
 			echo "Run with \"-D\" to generate the doc, including local variables"
+			echo "Run with \"-q\" to quit the server, if it's running"
 			echo "Run with \"-h\" to print out the help"
 			echo "Run without args to run normally"
 			exit 0
@@ -41,4 +46,4 @@ while getopts ":bhdD" opt; do
 	esac
 done
 
-openresty -c ${THIS_PATH}/conf/develop.conf -p ${THIS_PATH}
+openresty -p ${THIS_PATH}
