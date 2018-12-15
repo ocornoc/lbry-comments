@@ -20,14 +20,6 @@ Run `./start -h` for more details.
 
 ## Things to come
 
-### For the backend:
-
-(In order of likelihood of earliest completion)
-
-- [x] busted support
-- [x] comment u/d-voting
-- [x] LDoc/LuaDoc-style documentation
-
 These will come near the end of the project:
 
 - [ ] posting backups to LBRY
