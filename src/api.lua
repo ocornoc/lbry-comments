@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local api_VERSION = "0.6.0"
+local API_VERSION = "1.0.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -134,7 +134,7 @@ function api.status()
 	return {
 		is_running = true,
 		is_db_running = db.is_running(),
-		api_version = api_VERSION,
+		api_version = API_VERSION,
 		db_version = db._VERSION,
 	}
 end
