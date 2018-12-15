@@ -12,7 +12,7 @@ EXEC1b="_G.srcpath=_G.toppath..\\\"/src\\\""
 
 mkdir -p ${THIS_PATH}/logs
 
-while getopts ":bhdD" opt; do
+while getopts ":bhdDq" opt; do
 	case $opt in
 		b)
 			busted -e "${EXEC0b}" -e "${EXEC1b}"
