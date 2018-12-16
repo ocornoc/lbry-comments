@@ -6,3 +6,4 @@ fastcgi_temp
 logs
 scgi_temp
 uwsgi_temp
+seed
