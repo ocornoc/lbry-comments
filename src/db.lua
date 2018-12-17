@@ -718,6 +718,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	
 	while curs:fetch(com_data, int_ind) do
 		table.insert(results, com_data)
+		com_data = {}
 	end
 	
 	curs:close()
