@@ -188,7 +188,7 @@ function api.get_claim_data(params)
 	
 	if data and not err_msg then
 		return data
-	elseif err_msg == "claim doesnt exist" then
+	elseif err_msg == "uri doesnt exist" then
 		return json.null
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
