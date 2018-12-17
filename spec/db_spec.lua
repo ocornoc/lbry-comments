@@ -143,12 +143,13 @@ describe("High-level SQLite Abstraction", function()
 	
 	describe("supporting comments", function()
 		-- A placeholder for the ID of Comment N.
-		local com1id, com2id, com3id, com4id
+		local com1id, com2id, com3id, com4id, com5id
 		-- The message and poster for Comment N.
 		local com1mes, com1pos = "@TEST_MESSAGE1@", "@TEST_POSTER1@"
 		local com2mes, com2pos = "@TEST_MESSAGE2@", "@TEST_POSTER2@"
 		local com3mes, com3pos = "@TEST_MESSAGE3@", "@TEST_POSTER3@"
 		local com4mes, com4pos = "@TEST_MESSAGE4@", com2pos
+		local com5mes, com5pos = "@TEST_MESSAGE5@", com1pos
 		
 		it("should be able to make new comments", function()
 			com1id = db.comments.new(url1, com1pos, com1mes)
@@ -160,6 +161,8 @@ describe("High-level SQLite Abstraction", function()
 			-- Make comment 4 a reply to comment 3.
 			com4id = db.comments.new_reply(com3id, com4pos, com4mes)
 			assert.is_truthy(com4id)
+			com5id = db.comments.new(url1, com5pos, com5mes)
+			assert.is_truthy(com5id)
 		end)
 		
 		it("should support getting data of comments", function()
@@ -248,11 +251,25 @@ describe("High-level SQLite Abstraction", function()
 		end)
 		
 		it("should be able to get all comments from a claim", function()
-			-- All test claims should have exactly one top-level
-			--   comment.
+			-- All test claims should have at least one comment, and
+			--   url1 should have double url2's and url3's.
 			assert.is_not_equal(0, #db.claims.get_comments(url1))
 			assert.is_not_equal(0, #db.claims.get_comments(url2))
 			assert.is_not_equal(0, #db.claims.get_comments(url3))
+			assert.are_equal(2 * #db.claims.get_comments(url2),
+					 #db.claims.get_comments(url1))
+			-- Test if comments are returned as arrays or objects
+			--   when asked for either.
+			assert.is_nil(db.claims.get_comments(url1)[1][1])
+			assert.truthy(db.claims.get_comments(url1, true)[1][1])
+			-- Make sure comments don't overwrite eachother when
+			--   listing them.
+			--   Addresses issue #6
+			--   https://github.com/ocornoc/lbry-comments/issues/6
+			assert.are_not_equal(
+			 db.claims.get_comments(url1)[1].comm_index,
+			 db.claims.get_comments(url1)[2].comm_index
+			)
 		end)
 		
 		-- These will come when LBRY wallet syncing is introduced.
