@@ -268,7 +268,7 @@ describe("High-level SQLite Abstraction", function()
 			--   https://github.com/ocornoc/lbry-comments/issues/6
 			assert.are_not_equal(
 			 db.claims.get_comments(url1)[1].comm_index,
-			 db.claims.get_comments(url1)[5].comm_index
+			 db.claims.get_comments(url1)[2].comm_index
 			)
 		end)
 		
