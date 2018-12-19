@@ -4,6 +4,12 @@
 
 ***Please make sure to change the file `seed`.***
 
+## Permissions
+
+Make sure to allow the user `nobody` to access the project's root directory. This can be done as so:
+
+`sudo chown -R nobody . `
+
 ## How to use
 
 You must use the file `start` as it supplies the server with some necessary global variables.
