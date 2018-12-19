@@ -1,0 +1,23 @@
+matrix:
+  include:
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          update: true
+
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - luarocks
+            - openresty
+            - libsqlite3-dev
+
+install: true
+
+language: generic
+
+before_script:
+  - sudo luarocks install busted
+
+script: ./start -b
