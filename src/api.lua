@@ -773,8 +773,8 @@ end
 --- Returns all direct replies to a comment.
 -- @tparam table params The table of parameters.
 --
--- `params.comm_index`: An int containing the ID of the comment that is going to
--- be downvoted.
+-- `params.comm_index`: An int containing the ID of the comment whose replies
+-- will be returned.
 -- @treturn[1] table An array of replies.
 --
 -- Fields for each comment:
