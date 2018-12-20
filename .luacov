@@ -1,0 +1,4 @@
+return {
+	["api"]   = "src/api.lua",
+	["api.*"] = "src"
+}

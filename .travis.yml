@@ -40,4 +40,5 @@ script:
   - ./start -B
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -f luacov.stats.out
+  - luacov
+  - bash <(curl -s https://codecov.io/bash)
