@@ -26,9 +26,9 @@ before_install:
 install: true
 
 before_script:
-  - sudo luarocks install busted
-  - sudo luarocks install cluacov
-  - sudo luarocks install libsodium
+  - luarocks install --local busted
+  - luarocks install --local cluacov
+  - luarocks install --local libsodium
 
 script:
   - ./start -B
