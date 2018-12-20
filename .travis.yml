@@ -23,7 +23,7 @@ install: true
 
 before_script:
   - sudo luarocks install busted
-  - luarocks install --local cluacov
+  - sudo luarocks install cluacov
   - luarocks install --local luasql-sqlite3
 
 script:
