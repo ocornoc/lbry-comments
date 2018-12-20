@@ -28,6 +28,7 @@ before_install:
   - ./configure
   - make && make check
   - sudo make install
+  - cd ../lbry-comments
 
 install: true
 
