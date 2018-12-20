@@ -1,9 +1,6 @@
-before_install:
-  - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-  - sudo apt-get -y install software-properties-common
-  - sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-  - sudo apt-get update
-  - sudo apt-get install -yq openresty
+language: generic
+
+sudo: true
 
 matrix:
   include:
@@ -19,11 +16,21 @@ matrix:
             - luarocks
             - libsqlite3-dev
 
-install: true
+before_install:
+  - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+  - sudo apt-get -y install software-properties-common
+  - sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+  - sudo apt-get update
+  - sudo apt-get install -yq openresty
 
-language: generic
+install: true
 
 before_script:
   - sudo luarocks install busted
+  - sudo luarocks install cluacov
 
-script: ./start -b
+script:
+  - ./start -B
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
