@@ -25,7 +25,7 @@ before_install:
   - cd ..
   - wget -q https://download.libsodium.org/libsodium/releases/LATEST.tar.gz
   - tar -xf LATEST.tar.gz && cd libsodium-stable
-  - ./configure
+  - ./configure --prefix=/usr/bin
   - make && make check
   - sudo make install
   - cd ../lbry-comments
