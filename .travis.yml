@@ -29,7 +29,7 @@ before_script:
   - sudo luarocks install busted
   - luarocks install --local cluacov
   - luarocks install --local luasql-sqlite3
-  - luarocks install --local libsodium
+  - sudo luarocks install libsodium
 
 script:
   - ./start -B
