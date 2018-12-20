@@ -10,7 +10,7 @@ addons:
     packages:
       - luarocks
       - libsqlite3-dev
-      - libsodium-dev
+#     - libsodium-dev
 
 before_install:
   - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -19,12 +19,21 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -yq openresty openresty-resty
 
-install: true
+install:
+  - cd ..
+  - wget -q https://download.libsodium.org/libsodium/releases/LATEST.tar.gz
+  - tar -xf LATEST.tar.gz
+  - cd libsodium-stable
+  - ./configure --prefix=/usr/lib/x86_64-linux-gnu/
+  - make -j 2
+  - make -j 2 check
+  - sudo make install
+  - cd ../lbry-comments
 
 before_script:
   - sudo luarocks install busted
   - sudo luarocks install cluacov
-  - luarocks install --local luasql-sqlite3
+  - sudo luarocks install luasql-sqlite3
 
 script:
   - ./start -B
