@@ -28,6 +28,7 @@ install:
   - make -j 2
   - make -j 2 check
   - sudo make install
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/lib/libsodium.so /usr/lib/x86_64-linux-gnu/libsodium.so
   - cd ../lbry-comments
 
 before_script:
