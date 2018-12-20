@@ -1,4 +1,4 @@
 return {
-	["api"]   = "src/api.lua",
-	["api.*"] = "src"
+	["db"]   = "src/db.lua",
+	["db.*"] = "src"
 }
