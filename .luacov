@@ -1,4 +1,0 @@
-return {
-	["db"]   = "src/db.lua",
-	["db.*"] = "src"
-}

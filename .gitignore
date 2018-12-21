@@ -1,7 +1,6 @@
 *.backup
 *.db
 *.stats.out
-*.report.out
 client_body_temp
 fastcgi_temp
 logs

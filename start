@@ -12,14 +12,10 @@ EXEC1b="_G.srcpath=_G.toppath..\\\"/src\\\""
 
 mkdir -p ${THIS_PATH}/logs
 
-while getopts ":bBhdDq" opt; do
+while getopts ":bhdDq" opt; do
 	case $opt in
 		b)
 			busted -e "${EXEC0b}" -e "${EXEC1b}"
-			exit 0
-			;;
-		B)
-			busted -c -e "${EXEC0b}" -e "${EXEC1b}"
 			exit 0
 			;;
 		d)
@@ -35,8 +31,7 @@ while getopts ":bBhdDq" opt; do
 			exit 0
 			;;
 		h)
-			echo "Run with \"-b\" to run busted. Requires busted."
-			echo "Run with \"-B\" to run busted with coverage. Requires busted and LuaCov."
+			echo "Run with \"-b\" to run busted"
 			echo "Run with \"-d\" to generate the doc"
 			echo "Run with \"-D\" to generate the doc, including local variables"
 			echo "Run with \"-q\" to quit the server, if it's running"
