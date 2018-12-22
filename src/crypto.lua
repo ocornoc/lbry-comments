@@ -90,10 +90,6 @@ int crypto_sign_ed25519ph_final_verify(struct crypto_sign_ed25519ph_state *state
             __attribute__ ((warn_unused_result)) __attribute__ ((nonnull));
 
  // utils.h
-size_t sodium_base64_encoded_len(const size_t bin_len, const int variant);
-char *sodium_bin2base64(char * const b64, const size_t b64_maxlen,
-                        const unsigned char * const bin, const size_t bin_len,
-                        const int variant) __attribute__ ((nonnull));
 int sodium_mlock(void * const addr, const size_t len)
             __attribute__ ((nonnull));
 int sodium_munlock(void * const addr, const size_t len)
@@ -134,30 +130,12 @@ assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
 local kseedfile_path = _G.toppath .. "/" .. kseedfile_rpath
 
 --- The version of the library. Follows Semver 2.0.0.
-local CRYPTO_VERSION = "1.0.0"
+local CRYPTO_VERSION = "1.1.0"
 
 --------------------------------------------------------------------------------
 -- Padding
 -- @section padding
 -- @local
-
---- This is a very basic zeropadding function.
--- This function will *not* truncate the result if `to_len` is smaller than the
--- length of `str`.
--- @tparam string str The string to zeropad.
--- @tparam number to_len The length to pad to.
--- @treturn string The input zeropadded to `to_len`.
--- @usage zeropad_loose("hello", 7) --> "hello\0\0"
--- @usage zeropad_loose("hello", 4) --> "hello"
-local function zeropad_loose(str, to_len)
-	local pad_needed = to_len - str:len()
-	
-	if pad_needed > 0 then
-		return str .. ("\000"):rep(pad_needed)
-	else
-		return str
-	end
-end
 
 --- This is a very basic zero-padding function.
 -- This function *will* truncate the result if `to_len` is smaller than the
@@ -168,15 +146,7 @@ end
 -- @usage zeropad_strict("hello", 7) --> "hello\0\0"
 -- @usage zeropad_strict("hello", 4) --> "hell"
 local function zeropad_strict(str, to_len)
-	local pad_needed = to_len - str:len()
-	
-	if pad_needed > 0 then
-		return str .. ("\000"):rep(pad_needed)
-	elseif pad_needed < 0 then
-		return str:sub(1, 32)
-	else
-		return str
-	end
+	return str:sub(1, to_len) .. ("\000"):rep(to_len - str:len())
 end
 
 --------------------------------------------------------------------------------
@@ -212,84 +182,6 @@ local function sod_gc(p_type, size)
 	       p_type .. "' and size '" .. tonumber(size) .. "'")
 	
 	return new_p
-end
-
---------------------------------------------------------------------------------
--- Base64
--- @section base64
--- @local
-
---- Specifies the base64 "original" variant.
-local b64_original     = 1
---- Specifies the base64 "original" variant with no padding.
-local b64_original_np  = 3
---- Specifies the base64 "urlsafe" variant.
-local b64_urlsafe      = 5
---- Specifies the base64 "urlsafe" variant with no padding.
-local b64_urlsafe_np   = 7
-
---- Returns the length of the Base64-encoded string.
--- The length will differ given different `size` and `variant` inputs.
--- @raise Throws if `variant` isn't a variant.
--- @tparam int size The size (in bytes) of the string to encode.
--- @tparam[opt=b64_original] variant variant The Base64 variant to use.
--- @treturn int The amount of bytes required to store the encoded input.
--- @see b64_original, b64_original_np, b64_urlsafe, b64_urlsafe_np
--- @usage b64_len(("hello"):len(), b64_urlsafe) --> 9
--- @usage b64_len(30) --> 41
-local function b64_len(size, variant)
-	variant = variant or b64_original
-	assert(type(variant) == "number",
-	       "'variant' must be a 'b64_*' variant")
-	assert(variant == b64_original or variant == b64_original_np or
-	       variant == b64_urlsafe  or variant == b64_urlsafe_np,
-	       "'variant' isn't a recognized variant option")
-	
-	return tonumber(sodium.sodium_base64_encoded_len(size, variant))
-end
-
---- Encodes a string into Base64.
--- It uses libsodium to perform the encoding.
--- @raise Throws if `variant` isn't a variant.
--- @tparam string message The message to encode.
--- @tparam[opt=b64_original] variant variant The variant of Base64.
--- @treturn string The encoded message.
--- @usage b64_encode_str("sup dog", b64_urlsafe_np) --> "c3VwIGRvZw"
--- @usage b64_encode_str("hello") --> "aGVsbG8="
-local function b64_encode_str(message, variant)
-	variant = variant or b64_original
-	assert(type(message) == "string", "'message' wasn't a string")
-	
-	-- We don't have to write an assert for 'variant' being a number
-	--   because b64_len already has one. ;)
-	local encoded_len = b64_len(message:len(), variant)
-	local encoded_msg = sod_gc("unsigned char * const", encoded_len)
-	sodium.sodium_bin2base64(encoded_msg, encoded_len, message,
-	                         message:len(), variant)
-	
-	return ffi.string(encoded_msg, encoded_len)
-end
-
---- Encodes a pointer's data into Base64.
--- It uses libsodium to perform the encoding.
--- @raise Throws if `variant` isn't a variant.
--- @tparam pointer message The message to encode.
--- @tparam int message_len The length of the message in bytes.
--- @tparam[opt=b64_original] variant variant The variant of Base64.
--- @treturn string The encoded message.
--- @usage b64_encode_ptr(my_pointer, data_len, b64_original_np)
-local function b64_encode_ptr(message, message_len, variant)
-	variant = variant or b64_original
-	assert(type(message_len) == "number", "'message_len' wasn't a number")
-	
-	-- We don't have to write an assert for 'variant' being a number
-	--   because b64_len already has one. ;)
-	local encoded_len = b64_len(message_len, variant)
-	local encoded_msg = sod_gc("unsigned char * const", encoded_len)
-	sodium.sodium_bin2base64(encoded_msg, encoded_len, message,
-	                         message_len, variant)
-	
-	return ffi.string(encoded_msg, encoded_len)
 end
 
 --------------------------------------------------------------------------------
@@ -333,13 +225,6 @@ assert(sodium.sodium_mprotect_noaccess(sk) == 0,
 assert(sodium.sodium_mprotect_noaccess(kseed) == 0,
        "Couldn't full-protect the key seed")
 kseed = nil
-
-if _G.crypto_lib_print then
-	print("Generated keypair from seed.")
-
-	-- Print the Base64 of the public key.
-	print("Public key (Base64): " .. b64_encode_ptr(pk, sign_pkbytes))
-end
 
 --------------------------------------------------------------------------------
 
