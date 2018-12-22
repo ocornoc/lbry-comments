@@ -1,0 +1,44 @@
+language: c
+
+dist: xenial
+sudo: true
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - luarocks
+      - libsqlite3-dev
+#     - libsodium-dev
+
+before_install:
+  - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+  - sudo apt-get -y install software-properties-common
+  - sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+  - sudo apt-get update
+  - sudo apt-get install -yq openresty openresty-resty
+
+install:
+  - cd ..
+  - wget -q https://download.libsodium.org/libsodium/releases/LATEST.tar.gz
+  - tar -xf LATEST.tar.gz
+  - cd libsodium-stable
+  - ./configure --prefix=/usr/lib/x86_64-linux-gnu/
+  - make -j 2
+  - make -j 2 check
+  - sudo make install
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/lib/libsodium.so /usr/lib/x86_64-linux-gnu/libsodium.so
+  - cd ../lbry-comments
+
+before_script:
+  - sudo luarocks install busted
+  - sudo luarocks install cluacov
+  - sudo luarocks install luasql-sqlite3
+
+script:
+  - ./start -B
+
+after_success:
+  - luacov
+  - bash <(curl -s https://codecov.io/bash)

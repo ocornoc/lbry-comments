@@ -22,6 +22,7 @@ Run `./start -h` for more details.
 * [OpenResty](https://openresty.org/en/)
 * [LuaSQL](https://keplerproject.github.io/luasql/) (using SQLite3)
 * [busted](https://olivinelabs.com/busted/) (only for debug)
+* [LuaCov](https://keplerproject.github.io/luacov/) (only for *extra* debug)
 * [LDoc](https://github.com/stevedonovan/LDoc) (only for documentation gen)
 
 ## Things to come
