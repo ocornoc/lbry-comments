@@ -79,6 +79,10 @@ int crypto_sign_ed25519ph_final_create(struct crypto_sign_ed25519ph_state *state
                                        unsigned long long *siglen_p,
                                        const unsigned char *sk)
             __attribute__ ((nonnull));
+int crypto_sign_ed25519ph_final_verify(struct crypto_sign_ed25519ph_state *state,
+                                       const unsigned char *sig,
+                                       const unsigned char *pk)
+            __attribute__ ((warn_unused_result)) __attribute__ ((nonnull));
 
  // utils.h
 size_t sodium_base64_encoded_len(const size_t bin_len, const int variant);
@@ -455,7 +459,7 @@ function sign_state.__ver_state(self, sig)
 	local sig_copy = sod_gc("unsigned char *", sign_bytes)
 	ffi.copy(sig_copy, sig, sign_bytes)
 	
-	return crypto_sign_ed25519ph_final_verify(
+	return sodium.crypto_sign_ed25519ph_final_verify(
 	        self.__state,
 		sig_copy,
 		pk
