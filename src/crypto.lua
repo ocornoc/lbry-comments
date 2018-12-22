@@ -65,6 +65,11 @@ int crypto_sign_ed25519_detached(unsigned char *sig,
                                  unsigned long long mlen,
                                  const unsigned char *sk)
             __attribute__ ((nonnull(1, 3)));
+int crypto_sign_ed25519_verify_detached(const unsigned char *sig,
+                                        const unsigned char *m,
+                                        unsigned long long mlen,
+                                        const unsigned char *pk)
+            __attribute__ ((warn_unused_result));
 int crypto_sign_ed25519_seed_keypair(unsigned char *pk, unsigned char *sk,
                                      const unsigned char *seed)
             __attribute__ ((nonnull));
@@ -127,6 +132,9 @@ assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
 
 --- The path to the key seed file.
 local kseedfile_path = _G.toppath .. "/" .. kseedfile_rpath
+
+--- The version of the library. Follows Semver 2.0.0.
+local CRYPTO_VERSION = "1.0.0"
 
 --------------------------------------------------------------------------------
 -- Padding
@@ -337,7 +345,7 @@ end
 
 --- The crypto library public interface.
 -- @section crypto
-local _M = {}
+local _M = {_VERSION = CRYPTO_VERSION}
 local ull_size = ffi.sizeof(ffi.new("unsigned long long", 0))
 
 --------------------------------------------------------------------------------
@@ -454,15 +462,35 @@ function sign_state.__ver_state(self, sig)
 	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
 	       " bytes long, but is " .. sig:len() .. " bytes long")
 	
-	-- Lua strings can't be implicitly converted to pointers of non-const
-	--   chars, so we have to copy the string ourselves.
-	local sig_copy = sod_gc("unsigned char *", sign_bytes)
-	ffi.copy(sig_copy, sig, sign_bytes)
+	return sodium.crypto_sign_ed25519ph_final_verify(
+	        self.__state,
+		sig,
+		pk
+	       ) == 0
+end
+
+--- Verifies a signature and key against the object, finalizing it.
+-- Given a Lua string signature that is 64 long, returns whether the public key
+-- used in the object and the signature verify the text that has been inserted
+-- into the object. The object will require re-init.
+-- @lfunction __ver_state_any
+-- @tparam string sig The signature to verify.
+-- @tparam string pubkey The public key to verify against. Must be exactly 32
+-- bytes long.
+-- @treturn bool `true` if it verifies successfully, `false` otherwise.
+-- @usage sign_obj:__ver_state_any(my_sig, mypk)
+function sign_state.__ver_state_any(self, sig, pubkey)
+	assert(type(sig) == "string", "'sig' must be a string, but is a '" ..
+	       type(sig) .. "'")
+	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
+	       " bytes long, but is " .. sig:len() .. " bytes long")
+	assert(type(pubkey) == "string", "'pubkey' must be a string")
+	assert(pubkey:len() == sign_pkbytes, "'pubkey' must be 32 bytes long")
 	
 	return sodium.crypto_sign_ed25519ph_final_verify(
 	        self.__state,
-		sig_copy,
-		pk
+		sig,
+		pubkey
 	       ) == 0
 end
 
@@ -540,7 +568,9 @@ sign_state.get_sig = sign_state.get_signature
 
 --- Given a signature string, returns whether the state verifies it.
 -- The signature string must be 64 bytes long and have been made using one of
--- the @{sign_state} objects. Resets the state after.
+-- the @{sign_state} objects. Resets the state after. This also only verifies
+-- signatures created using this specific instance of crypto.lua (specifically,
+-- signatures created with the same seed as given in the `seed` file).
 -- @function verify
 -- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
 -- @treturn bool `true` if it's verified, `false` otherwise.
@@ -548,6 +578,23 @@ sign_state.get_sig = sign_state.get_signature
 -- @usage sign_obj:insert("verify me"):verify(past_signature)
 function sign_state.verify(self, sig)
 	local result = self:__ver_state(sig)
+	self:init()
+	
+	return result
+end
+
+--- Given a signature string, returns whether the state verifies it.
+-- The signature string must be 64 bytes long and have been made using one of
+-- the @{sign_state} objects. Resets the state after.
+-- @function verify_any
+-- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
+-- @tparam string pubkey The public key to verify against. Must be exactly 32
+-- bytes long.
+-- @treturn bool `true` if it's verified, `false` otherwise.
+-- @see get_signature
+-- @usage sign_obj:insert("verify me"):verify_any(past_signature, mypubkey)
+function sign_state.verify_any(self, sig, pubkey)
+	local result = self:__ver_state_any(sig, pubkey)
 	self:init()
 	
 	return result
@@ -594,6 +641,71 @@ function _M.get_sig(message)
 	-- a ULL pointer.
 	local length = tonumber(ffi.new("unsigned long long *", sig_len)[0])
 	return ffi.string(sig, length)
+end
+
+--- Returns whether a message is verified with a given signature.
+-- As this uses a different signature scheme (Ed25519) than the @{sign_state}s,
+-- it cannot verify those signatures. This also only verifies signatures created
+-- using this specific instance of crypto.lua (specifically, signatures created
+-- with the same seed as given in the `seed` file).
+-- @function verify_sig
+-- @tparam string message The message to verify.
+-- @tparam string signature The signature to verify. Must be exactly 64 bytes
+-- long.
+-- @treturn bool Whether `message` is successfully verified by `signature`.
+-- @see verify_any_sig
+-- @usage local mysig = crypto.get_sig("get my signature please")
+--local success = crypto.verify_sig("get my signature please", mysig)
+function _M.verify_sig(message, signature)
+	-- message must be a string.
+	assert(type(message) == "string",
+	       "Got a " .. type(message) .. ", need a string")
+	-- signature must be a string.
+	assert(type(signature) == "string",
+	       "Got a " .. type(signature) .. ", need a string")
+	-- signature must be 64 bytes long.
+	assert(signature:len() == sign_bytes, "signature must be 64 bytes")
+	
+	return sodium.crypto_sign_ed25519_verify_detached(
+		signature,
+		message,
+		message:len(),
+		pk
+	) == 0
+end
+
+--- Returns whether a signature and public key verify a message.
+-- As this uses a different signature scheme (Ed25519) than the @{sign_state}s,
+-- it cannot verify those signatures.
+-- @function verify_any_sig
+-- @tparam string message The message to verify.
+-- @tparam string signature The signature to verify. Must be exactly 64 bytes
+-- long.
+-- @tparam string pubkey The public key to verify against. Must be exactly 32
+-- bytes long.
+-- @treturn bool Whether `message` is successfully verified by `signature` and
+-- `pubkey`.
+function _M.verify_any_sig(message, signature, pubkey)
+	-- message must be a string.
+	assert(type(message) == "string",
+	       "Got a " .. type(message) .. ", need a string")
+	-- signature must be a string.
+	assert(type(signature) == "string",
+	       "Got a " .. type(signature) .. ", need a string")
+	-- signature must be 64 bytes long.
+	assert(signature:len() == sign_bytes, "signature must be 64 bytes")
+	-- pubkey must be a string.
+	assert(type(pubkey) == "string",
+	       "Got a " .. type(pubkey) .. ", need a string")
+	-- signature must be 32 bytes long.
+	assert(pubkey:len() == sign_pkbytes, "pubkey must be 32 bytes")
+	
+	return sodium.crypto_sign_ed25519_verify_detached(
+		signature,
+		message,
+		message:len(),
+		pubkey
+	) == 0
 end
 
 --- Returns the public key.
