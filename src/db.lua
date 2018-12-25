@@ -59,7 +59,7 @@ local ngx = require "ngx"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "1.0.0"
+local DB_VERSION = "1.0.1"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -774,7 +774,7 @@ function _M.comments.new(claim_uri, poster, message)
 	if type(poster) ~= "string" then
 		return nil, "poster not string"
 	elseif poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, "poster only whitepsace"
+		return nil, "poster only whitespace"
 	end
 	
 	local claim_index = claim_data.claim_index
