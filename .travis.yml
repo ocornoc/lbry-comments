@@ -38,6 +38,7 @@ before_script:
 
 script:
   - ./start -B
+  - ./start -B
 
 after_success:
   - luacov
