@@ -59,7 +59,7 @@ local ngx = require "ngx"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "1.0.3"
+local DB_VERSION = "1.0.4"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -524,10 +524,6 @@ function _M.claims.get_data(claim_uri, int_ind)
 	 accouts:escape(claim_uri) .. "';"
 	)
 	
-	if not curs or err_msg then
-		return curs, err_msg
-	end
-	
 	local results = {}
 	-- In order to specify alphanumeric/int keys, we have to give a table
 	--   parameter to "fetch".
@@ -573,11 +569,7 @@ function _M.claims.upvote(claim_uri, times)
 	 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
 	)
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		return times + data.upvotes
-	end
+	return times + data.upvotes
 end
 
 --- Downvotes a claim and returns the new total.
