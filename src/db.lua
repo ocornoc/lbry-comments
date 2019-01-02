@@ -258,10 +258,6 @@ local function get_claim_num()
 	 SELECT COUNT(*) FROM claims;
 	]]
 	
-	if err_msg then
-		return nil, err_msg
-	end
-	
 	local claim_count = curs:fetch()
 	curs:close()
 	
@@ -276,10 +272,6 @@ local function get_comment_num()
 	local curs, err_msg = accouts:execute[[
 	 SELECT COUNT(*) FROM comments;
 	]]
-	
-	if err_msg then
-		return nil, err_msg
-	end
 	
 	local comment_count = curs:fetch()
 	curs:close()
@@ -301,16 +293,7 @@ end
 local function new_backup_entry(size)
 	-- We need the count of all of the claims and comments in the database.
 	local claim_count, err_msg = get_claim_num()
-	
-	if err_msg then
-		return nil, err_msg
-	end
-	
 	local com_count, err_msg = get_comment_num()
-	
-	if err_msg then
-		return nil, err_msg
-	end
 	
 	local time = get_unix_time()
 	
@@ -320,13 +303,9 @@ local function new_backup_entry(size)
 	 VALUES (]] .. time .. ", " .. com_count .. ", " .. claim_count ..
 	 ", " .. size .. ");")
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		last_backup_time = time
-		
-		return true
-	end
+	last_backup_time = time
+	
+	return true
 end
 
 --- Returns the ID of the latest comment in @{accouts.comments}.
@@ -338,18 +317,10 @@ local function get_latest_comment()
 	SELECT last_insert_rowid();
 	]]
 	
-	if err_msg then
-		return nil, err_msg
-	end
-	
 	local results, err_msg = curs:fetch()
 	curs:close()
 	
-	if not results or err_msg then
-		return results, err_msg
-	else
-		return results
-	end
+	return results
 end
 
 --------------------------------------------------------------------------------
@@ -639,11 +610,7 @@ function _M.claims.downvote(claim_uri, times)
 	 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
 	)
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		return times + data.downvotes
-	end
+	return times + data.downvotes
 end
 
 --- Returns the URI from a claim index.
@@ -662,10 +629,6 @@ function _M.claims.get_uri(claim_index)
 	 "SELECT lbry_perm_uri FROM claims WHERE claim_index = " ..
 	 claim_index .. ";"
 	)
-	
-	if err_msg then
-		return nil, err_msg
-	end
 	
 	local results = curs:fetch()
 	curs:close()
@@ -707,10 +670,6 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	 "SELECT * FROM comments WHERE parent_com IS NULL AND claim_index = " ..
 	 claim_index .. ";"
 	)
-	
-	if err_msg then
-		return nil, err_msg
-	end
 	
 	local results = {}
 	local com_data = {}
@@ -790,11 +749,7 @@ function _M.comments.new(claim_uri, poster, message)
 	 post_time .. ", '" .. message .. "');"
 	)
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		return get_latest_comment()
-	end
+	return get_latest_comment()
 end
 
 --- Inserts a new reply into the comments database.
@@ -842,11 +797,7 @@ function _M.comments.new_reply(parent_id, poster, message)
 	 message .. "');"
 	)
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		return get_latest_comment()
-	end
+	return get_latest_comment()
 end
 
 --- Returns the data for a given comment.
@@ -959,11 +910,6 @@ function _M.comments.upvote(comment_id, times)
 	
 	if not data or err_msg then
 		return data, err_msg
-	elseif data.comm_index ~= comment_id then
-		print("In preparation for this bug, I have added a debug " ..
-		      "print statement. This should NEVER happen, and if " ..
-		      "it does, panic immediately. Or file a bug report.")
-		return nil, "comm_index ~= comment_id"
 	end
 	
 	local _, err_msg = accouts:execute(
@@ -971,11 +917,7 @@ function _M.comments.upvote(comment_id, times)
 	 " WHERE comm_index = '" .. comment_id .. "';"
 	)
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		return times + data.upvotes
-	end
+	return times + data.upvotes
 end
 
 --- Downvotes a comment and returns the new total.
@@ -1001,11 +943,6 @@ function _M.comments.downvote(comment_id, times)
 	
 	if not data or err_msg then
 		return data, err_msg
-	elseif data.comm_index ~= comment_id then
-		print("In preparation for this bug, I have added a debug " ..
-		      "print statement. This should NEVER happen, and if " ..
-		      "it does, panic immediately. Or file a bug report.")
-		return nil, "comm_index ~= comment_id"
 	end
 	
 	local _, err_msg = accouts:execute(
@@ -1013,11 +950,7 @@ function _M.comments.downvote(comment_id, times)
 	 " WHERE comm_index = '" .. comment_id .. "';"
 	)
 	
-	if err_msg then
-		return nil, err_msg
-	else
-		return times + data.downvotes
-	end
+	return times + data.downvotes
 end
 
 --------------------------------------------------------------------------------
