@@ -814,6 +814,8 @@ end
 function _M.comments.get_data(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
 		return nil, "id not number"
+	elseif comment_id % 1 ~= 0 then
+		return nil, "id not int"
 	end
 	
 	local curs, err_msg = accouts:execute(
@@ -853,6 +855,8 @@ end
 function _M.comments.get_replies(comment_id, int_ind)
 	if type(comment_id) ~= "number" then
 		return nil, "id not number"
+	elseif comment_id % 1 ~= 0 then
+		return nil, "id not int"
 	end
 	
 	-- We fetch the parent comment data in order to check if the comment is
