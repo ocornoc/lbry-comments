@@ -73,6 +73,9 @@ local url_bad = "@TEST_CLAIM_BAD@"
 local url_nonstring = 123123
 -- A fake ID specifically created with the assumption data will never be there.
 local claimid_bad = -1
+-- Values to make sure only ints are allowed as Claim IDs.
+local claimid_nonnum = "wowzers"
+local claimid_nonint = math.pi
 -- A placeholder for the ID of Comment N.
 local com1id, com2id, com3id, com4id, com5id
 -- A fake ID specifically created with the assumption data will never be there.
@@ -236,6 +239,18 @@ describe("The claim database", function()
 		--  'url3'.
 		local extrap_url3 = db.claims.get_uri(url3_id)
 		assert.are_equal(extrap_url3, url3)
+	end)
+	
+	it("should error when getting URI from mistyped ID", function()
+		local success, err_msg
+		
+		success, err_msg = db.claims.get_uri(claimid_nonnum)
+		assert.is_falsy(success)
+		assert.is_equal("index not number", err_msg)
+		
+		success, err_msg = db.claims.get_uri(claimid_nonint)
+		assert.is_falsy(success)
+		assert.is_equal("index not int", err_msg)
 	end)
 	
 	it("shouldn't be able to extrapolate the URI from a fake ID", function()

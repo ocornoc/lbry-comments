@@ -623,6 +623,8 @@ end
 function _M.claims.get_uri(claim_index)
 	if type(claim_index) ~= "number" then
 		return nil, "index not number"
+	elseif claim_index % 1 ~= 0 then
+		return nil, "index not int"
 	end
 	
 	local curs, err_msg = accouts:execute(
