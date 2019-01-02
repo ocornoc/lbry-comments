@@ -59,7 +59,7 @@ local ngx = require "ngx"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "1.0.2"
+local DB_VERSION = "1.0.3"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -661,10 +661,6 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	end
 	
 	local claim_index = claim_data.claim_index
-	
-	if not claim_index or type(claim_index) ~= "number" then
-		return nil, "weird data"
-	end
 	
 	local curs, err_msg = accouts:execute(
 	 "SELECT * FROM comments WHERE parent_com IS NULL AND claim_index = " ..
