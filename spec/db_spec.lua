@@ -215,6 +215,50 @@ describe("The claim database", function()
 				 stats_1a_1.downvotes + 3)
 	end)
 	
+	it("should error when voting on mistyped claim IDs", function()
+		local success, err_msg
+		
+		-- Test single-upvote.
+		success, err_msg = db.claims.upvote(url_nonstring)
+		assert.is_falsy(success)
+		assert.is_equal("uri not string", err_msg)
+		-- Test single-downvote.
+		success, err_msg = db.claims.downvote(url_nonstring)
+		assert.is_falsy(success)
+		assert.is_equal("uri not string", err_msg)
+		
+		-- Test multi-upvote.
+		success, err_msg = db.claims.upvote(url_nonstring, 2)
+		assert.is_falsy(success)
+		assert.is_equal("uri not string", err_msg)
+		-- Test multi-downvote.
+		success, err_msg = db.claims.downvote(url_nonstring, 2)
+		assert.is_falsy(success)
+		assert.is_equal("uri not string", err_msg)
+	end)
+	
+	it("should error when voting on nonexistent comments", function()
+		local success, err_msg
+		
+		-- Test single-upvote.
+		success, err_msg = db.claims.upvote(url_bad)
+		assert.is_falsy(success)
+		assert.is_equal("uri doesnt exist", err_msg)
+		-- Test single-downvote.
+		success, err_msg = db.claims.downvote(url_bad)
+		assert.is_falsy(success)
+		assert.is_equal("uri doesnt exist", err_msg)
+		
+		-- Test multi-upvote.
+		success, err_msg = db.claims.upvote(url_bad, 2)
+		assert.is_falsy(success)
+		assert.is_equal("uri doesnt exist", err_msg)
+		-- Test multi-downvote.
+		success, err_msg = db.claims.downvote(url_bad, 2)
+		assert.is_falsy(success)
+		assert.is_equal("uri doesnt exist", err_msg)
+	end)
+	
 	it("should error when votes aren't typed correctly", function()
 		local function test_func(f)
 			local success, err_msg = f(url3, "woah")
@@ -432,6 +476,62 @@ describe("The comments database", function()
 		-- Make sure the upvotes in the database reflects the
 		--   new downvotes.
 		assert.are_equal(com1a.downvotes + 5, com1a_new.downvotes)
+	end)
+	
+	it("should error when voting on mistyped comments", function()
+		local success, err_msg
+		
+		-- Test single-upvote.
+		success, err_msg = db.comments.upvote(comid_nonnum)
+		assert.is_falsy(success)
+		assert.is_equal("id not number", err_msg)
+		success, err_msg = db.comments.upvote(comid_nonint)
+		assert.is_falsy(success)
+		assert.is_equal("id not int", err_msg)
+		-- Test single-downvote.
+		success, err_msg = db.comments.downvote(comid_nonnum)
+		assert.is_falsy(success)
+		assert.is_equal("id not number", err_msg)
+		success, err_msg = db.comments.downvote(comid_nonint)
+		assert.is_falsy(success)
+		assert.is_equal("id not int", err_msg)
+		
+		-- Test multi-upvote.
+		success, err_msg = db.comments.upvote(comid_nonnum, 2)
+		assert.is_falsy(success)
+		assert.is_equal("id not number", err_msg)
+		success, err_msg = db.comments.upvote(comid_nonint, 2)
+		assert.is_falsy(success)
+		assert.is_equal("id not int", err_msg)
+		-- Test multi-downvote.
+		success, err_msg = db.comments.downvote(comid_nonnum, 2)
+		assert.is_falsy(success)
+		assert.is_equal("id not number", err_msg)
+		success, err_msg = db.comments.downvote(comid_nonint, 2)
+		assert.is_falsy(success)
+		assert.is_equal("id not int", err_msg)
+	end)
+	
+	it("should error when voting on nonexistent comments", function()
+		local success, err_msg
+		
+		-- Test single-upvote.
+		success, err_msg = db.comments.upvote(comid_bad)
+		assert.is_falsy(success)
+		assert.is_equal("comment doesnt exist", err_msg)
+		-- Test single-downvote.
+		success, err_msg = db.comments.downvote(comid_bad)
+		assert.is_falsy(success)
+		assert.is_equal("comment doesnt exist", err_msg)
+		
+		-- Test multi-upvote.
+		success, err_msg = db.comments.upvote(comid_bad, 2)
+		assert.is_falsy(success)
+		assert.is_equal("comment doesnt exist", err_msg)
+		-- Test multi-downvote.
+		success, err_msg = db.comments.downvote(comid_bad, 2)
+		assert.is_falsy(success)
+		assert.is_equal("comment doesnt exist", err_msg)
 	end)
 	
 	it("should error when votes aren't typed correctly", function()
