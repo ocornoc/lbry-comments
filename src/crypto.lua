@@ -65,6 +65,11 @@ int crypto_sign_ed25519_detached(unsigned char *sig,
                                  unsigned long long mlen,
                                  const unsigned char *sk)
             __attribute__ ((nonnull(1, 3)));
+int crypto_sign_ed25519_verify_detached(const unsigned char *sig,
+                                        const unsigned char *m,
+                                        unsigned long long mlen,
+                                        const unsigned char *pk)
+            __attribute__ ((warn_unused_result));
 int crypto_sign_ed25519_seed_keypair(unsigned char *pk, unsigned char *sk,
                                      const unsigned char *seed)
             __attribute__ ((nonnull));
@@ -79,12 +84,12 @@ int crypto_sign_ed25519ph_final_create(struct crypto_sign_ed25519ph_state *state
                                        unsigned long long *siglen_p,
                                        const unsigned char *sk)
             __attribute__ ((nonnull));
+int crypto_sign_ed25519ph_final_verify(struct crypto_sign_ed25519ph_state *state,
+                                       const unsigned char *sig,
+                                       const unsigned char *pk)
+            __attribute__ ((warn_unused_result)) __attribute__ ((nonnull));
 
  // utils.h
-size_t sodium_base64_encoded_len(const size_t bin_len, const int variant);
-char *sodium_bin2base64(char * const b64, const size_t b64_maxlen,
-                        const unsigned char * const bin, const size_t bin_len,
-                        const int variant) __attribute__ ((nonnull));
 int sodium_mlock(void * const addr, const size_t len)
             __attribute__ ((nonnull));
 int sodium_munlock(void * const addr, const size_t len)
@@ -124,28 +129,13 @@ assert(sodium.sodium_init() ~= -1, "libsodium failed to initialize")
 --- The path to the key seed file.
 local kseedfile_path = _G.toppath .. "/" .. kseedfile_rpath
 
+--- The version of the library. Follows Semver 2.0.0.
+local CRYPTO_VERSION = "1.1.0"
+
 --------------------------------------------------------------------------------
 -- Padding
 -- @section padding
 -- @local
-
---- This is a very basic zeropadding function.
--- This function will *not* truncate the result if `to_len` is smaller than the
--- length of `str`.
--- @tparam string str The string to zeropad.
--- @tparam number to_len The length to pad to.
--- @treturn string The input zeropadded to `to_len`.
--- @usage zeropad_loose("hello", 7) --> "hello\0\0"
--- @usage zeropad_loose("hello", 4) --> "hello"
-local function zeropad_loose(str, to_len)
-	local pad_needed = to_len - str:len()
-	
-	if pad_needed > 0 then
-		return str .. ("\000"):rep(pad_needed)
-	else
-		return str
-	end
-end
 
 --- This is a very basic zero-padding function.
 -- This function *will* truncate the result if `to_len` is smaller than the
@@ -156,15 +146,7 @@ end
 -- @usage zeropad_strict("hello", 7) --> "hello\0\0"
 -- @usage zeropad_strict("hello", 4) --> "hell"
 local function zeropad_strict(str, to_len)
-	local pad_needed = to_len - str:len()
-	
-	if pad_needed > 0 then
-		return str .. ("\000"):rep(pad_needed)
-	elseif pad_needed < 0 then
-		return str:sub(1, 32)
-	else
-		return str
-	end
+	return str:sub(1, to_len) .. ("\000"):rep(to_len - str:len())
 end
 
 --------------------------------------------------------------------------------
@@ -200,84 +182,6 @@ local function sod_gc(p_type, size)
 	       p_type .. "' and size '" .. tonumber(size) .. "'")
 	
 	return new_p
-end
-
---------------------------------------------------------------------------------
--- Base64
--- @section base64
--- @local
-
---- Specifies the base64 "original" variant.
-local b64_original     = 1
---- Specifies the base64 "original" variant with no padding.
-local b64_original_np  = 3
---- Specifies the base64 "urlsafe" variant.
-local b64_urlsafe      = 5
---- Specifies the base64 "urlsafe" variant with no padding.
-local b64_urlsafe_np   = 7
-
---- Returns the length of the Base64-encoded string.
--- The length will differ given different `size` and `variant` inputs.
--- @raise Throws if `variant` isn't a variant.
--- @tparam int size The size (in bytes) of the string to encode.
--- @tparam[opt=b64_original] variant variant The Base64 variant to use.
--- @treturn int The amount of bytes required to store the encoded input.
--- @see b64_original, b64_original_np, b64_urlsafe, b64_urlsafe_np
--- @usage b64_len(("hello"):len(), b64_urlsafe) --> 9
--- @usage b64_len(30) --> 41
-local function b64_len(size, variant)
-	variant = variant or b64_original
-	assert(type(variant) == "number",
-	       "'variant' must be a 'b64_*' variant")
-	assert(variant == b64_original or variant == b64_original_np or
-	       variant == b64_urlsafe  or variant == b64_urlsafe_np,
-	       "'variant' isn't a recognized variant option")
-	
-	return tonumber(sodium.sodium_base64_encoded_len(size, variant))
-end
-
---- Encodes a string into Base64.
--- It uses libsodium to perform the encoding.
--- @raise Throws if `variant` isn't a variant.
--- @tparam string message The message to encode.
--- @tparam[opt=b64_original] variant variant The variant of Base64.
--- @treturn string The encoded message.
--- @usage b64_encode_str("sup dog", b64_urlsafe_np) --> "c3VwIGRvZw"
--- @usage b64_encode_str("hello") --> "aGVsbG8="
-local function b64_encode_str(message, variant)
-	variant = variant or b64_original
-	assert(type(message) == "string", "'message' wasn't a string")
-	
-	-- We don't have to write an assert for 'variant' being a number
-	--   because b64_len already has one. ;)
-	local encoded_len = b64_len(message:len(), variant)
-	local encoded_msg = sod_gc("unsigned char * const", encoded_len)
-	sodium.sodium_bin2base64(encoded_msg, encoded_len, message,
-	                         message:len(), variant)
-	
-	return ffi.string(encoded_msg, encoded_len)
-end
-
---- Encodes a pointer's data into Base64.
--- It uses libsodium to perform the encoding.
--- @raise Throws if `variant` isn't a variant.
--- @tparam pointer message The message to encode.
--- @tparam int message_len The length of the message in bytes.
--- @tparam[opt=b64_original] variant variant The variant of Base64.
--- @treturn string The encoded message.
--- @usage b64_encode_ptr(my_pointer, data_len, b64_original_np)
-local function b64_encode_ptr(message, message_len, variant)
-	variant = variant or b64_original
-	assert(type(message_len) == "number", "'message_len' wasn't a number")
-	
-	-- We don't have to write an assert for 'variant' being a number
-	--   because b64_len already has one. ;)
-	local encoded_len = b64_len(message_len, variant)
-	local encoded_msg = sod_gc("unsigned char * const", encoded_len)
-	sodium.sodium_bin2base64(encoded_msg, encoded_len, message,
-	                         message_len, variant)
-	
-	return ffi.string(encoded_msg, encoded_len)
 end
 
 --------------------------------------------------------------------------------
@@ -322,18 +226,11 @@ assert(sodium.sodium_mprotect_noaccess(kseed) == 0,
        "Couldn't full-protect the key seed")
 kseed = nil
 
-if _G.crypto_lib_print then
-	print("Generated keypair from seed.")
-
-	-- Print the Base64 of the public key.
-	print("Public key (Base64): " .. b64_encode_ptr(pk, sign_pkbytes))
-end
-
 --------------------------------------------------------------------------------
 
 --- The crypto library public interface.
 -- @section crypto
-local _M = {}
+local _M = {_VERSION = CRYPTO_VERSION}
 local ull_size = ffi.sizeof(ffi.new("unsigned long long", 0))
 
 --------------------------------------------------------------------------------
@@ -450,15 +347,35 @@ function sign_state.__ver_state(self, sig)
 	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
 	       " bytes long, but is " .. sig:len() .. " bytes long")
 	
-	-- Lua strings can't be implicitly converted to pointers of non-const
-	--   chars, so we have to copy the string ourselves.
-	local sig_copy = sod_gc("unsigned char *", sign_bytes)
-	ffi.copy(sig_copy, sig, sign_bytes)
-	
-	return crypto_sign_ed25519ph_final_verify(
+	return sodium.crypto_sign_ed25519ph_final_verify(
 	        self.__state,
-		sig_copy,
+		sig,
 		pk
+	       ) == 0
+end
+
+--- Verifies a signature and key against the object, finalizing it.
+-- Given a Lua string signature that is 64 long, returns whether the public key
+-- used in the object and the signature verify the text that has been inserted
+-- into the object. The object will require re-init.
+-- @lfunction __ver_state_any
+-- @tparam string sig The signature to verify.
+-- @tparam string pubkey The public key to verify against. Must be exactly 32
+-- bytes long.
+-- @treturn bool `true` if it verifies successfully, `false` otherwise.
+-- @usage sign_obj:__ver_state_any(my_sig, mypk)
+function sign_state.__ver_state_any(self, sig, pubkey)
+	assert(type(sig) == "string", "'sig' must be a string, but is a '" ..
+	       type(sig) .. "'")
+	assert(sig:len() == sign_bytes, "'sig' must be " .. sign_bytes ..
+	       " bytes long, but is " .. sig:len() .. " bytes long")
+	assert(type(pubkey) == "string", "'pubkey' must be a string")
+	assert(pubkey:len() == sign_pkbytes, "'pubkey' must be 32 bytes long")
+	
+	return sodium.crypto_sign_ed25519ph_final_verify(
+	        self.__state,
+		sig,
+		pubkey
 	       ) == 0
 end
 
@@ -536,7 +453,9 @@ sign_state.get_sig = sign_state.get_signature
 
 --- Given a signature string, returns whether the state verifies it.
 -- The signature string must be 64 bytes long and have been made using one of
--- the @{sign_state} objects. Resets the state after.
+-- the @{sign_state} objects. Resets the state after. This also only verifies
+-- signatures created using this specific instance of crypto.lua (specifically,
+-- signatures created with the same seed as given in the `seed` file).
 -- @function verify
 -- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
 -- @treturn bool `true` if it's verified, `false` otherwise.
@@ -544,6 +463,23 @@ sign_state.get_sig = sign_state.get_signature
 -- @usage sign_obj:insert("verify me"):verify(past_signature)
 function sign_state.verify(self, sig)
 	local result = self:__ver_state(sig)
+	self:init()
+	
+	return result
+end
+
+--- Given a signature string, returns whether the state verifies it.
+-- The signature string must be 64 bytes long and have been made using one of
+-- the @{sign_state} objects. Resets the state after.
+-- @function verify_any
+-- @tparam string sig The signature to verify. Must be exactly 64 bytes long.
+-- @tparam string pubkey The public key to verify against. Must be exactly 32
+-- bytes long.
+-- @treturn bool `true` if it's verified, `false` otherwise.
+-- @see get_signature
+-- @usage sign_obj:insert("verify me"):verify_any(past_signature, mypubkey)
+function sign_state.verify_any(self, sig, pubkey)
+	local result = self:__ver_state_any(sig, pubkey)
 	self:init()
 	
 	return result
@@ -590,6 +526,71 @@ function _M.get_sig(message)
 	-- a ULL pointer.
 	local length = tonumber(ffi.new("unsigned long long *", sig_len)[0])
 	return ffi.string(sig, length)
+end
+
+--- Returns whether a message is verified with a given signature.
+-- As this uses a different signature scheme (Ed25519) than the @{sign_state}s,
+-- it cannot verify those signatures. This also only verifies signatures created
+-- using this specific instance of crypto.lua (specifically, signatures created
+-- with the same seed as given in the `seed` file).
+-- @function verify_sig
+-- @tparam string message The message to verify.
+-- @tparam string signature The signature to verify. Must be exactly 64 bytes
+-- long.
+-- @treturn bool Whether `message` is successfully verified by `signature`.
+-- @see verify_any_sig
+-- @usage local mysig = crypto.get_sig("get my signature please")
+--local success = crypto.verify_sig("get my signature please", mysig)
+function _M.verify_sig(message, signature)
+	-- message must be a string.
+	assert(type(message) == "string",
+	       "Got a " .. type(message) .. ", need a string")
+	-- signature must be a string.
+	assert(type(signature) == "string",
+	       "Got a " .. type(signature) .. ", need a string")
+	-- signature must be 64 bytes long.
+	assert(signature:len() == sign_bytes, "signature must be 64 bytes")
+	
+	return sodium.crypto_sign_ed25519_verify_detached(
+		signature,
+		message,
+		message:len(),
+		pk
+	) == 0
+end
+
+--- Returns whether a signature and public key verify a message.
+-- As this uses a different signature scheme (Ed25519) than the @{sign_state}s,
+-- it cannot verify those signatures.
+-- @function verify_any_sig
+-- @tparam string message The message to verify.
+-- @tparam string signature The signature to verify. Must be exactly 64 bytes
+-- long.
+-- @tparam string pubkey The public key to verify against. Must be exactly 32
+-- bytes long.
+-- @treturn bool Whether `message` is successfully verified by `signature` and
+-- `pubkey`.
+function _M.verify_any_sig(message, signature, pubkey)
+	-- message must be a string.
+	assert(type(message) == "string",
+	       "Got a " .. type(message) .. ", need a string")
+	-- signature must be a string.
+	assert(type(signature) == "string",
+	       "Got a " .. type(signature) .. ", need a string")
+	-- signature must be 64 bytes long.
+	assert(signature:len() == sign_bytes, "signature must be 64 bytes")
+	-- pubkey must be a string.
+	assert(type(pubkey) == "string",
+	       "Got a " .. type(pubkey) .. ", need a string")
+	-- signature must be 32 bytes long.
+	assert(pubkey:len() == sign_pkbytes, "pubkey must be 32 bytes")
+	
+	return sodium.crypto_sign_ed25519_verify_detached(
+		signature,
+		message,
+		message:len(),
+		pubkey
+	) == 0
 end
 
 --- Returns the public key.

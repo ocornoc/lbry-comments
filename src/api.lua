@@ -33,7 +33,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local API_VERSION = "1.0.0"
+local API_VERSION = "1.1.0"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -123,12 +123,16 @@ end
 --
 -- `status.db_version` is a string, representing the SemVer 2.0.0 version
 -- of the database.
+--
+-- `status.db_version` is a string, representing the SemVer 2.0.0 version
+-- of the cryptographic library in use.
 -- @usage {"jsonrpc": "2.0", "method": "status", "id": 1} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {
 -- 	"is_running": true,
 -- 	"is_db_running": true,
--- 	"api_version": "0.0.0",
--- 	"db_version": "0.0.3"
+-- 	"api_version": "1.1.0",
+-- 	"db_version": "1.0.0"
+-- 	"crypto_version": "1.0.0"
 -- }}
 function api.status()
 	return {
@@ -136,6 +140,7 @@ function api.status()
 		is_db_running = db.is_running(),
 		api_version = API_VERSION,
 		db_version = db._VERSION,
+		crypto_version = crypto._VERSION,
 	}
 end
 

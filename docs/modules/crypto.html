@@ -106,6 +106,10 @@
 	<td class="name" nowrap><a href="#sign_state:verify">sign_state:verify (sig)</a></td>
 	<td class="summary">Given a signature string, returns whether the state verifies it.</td>
 	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#sign_state:verify_any">sign_state:verify_any (sig, pubkey)</a></td>
+	<td class="summary">Given a signature string, returns whether the state verifies it.</td>
+	</tr>
 </table>
 <h2><a href="#crypto">crypto </a></h2>
 <table class="function_list">
@@ -116,6 +120,14 @@
 	<tr>
 	<td class="name" nowrap><a href="#get_sig">get_sig (message)</a></td>
 	<td class="summary">Returns the signature of a message.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#verify_sig">verify_sig (message, signature)</a></td>
+	<td class="summary">Returns whether a message is verified with a given signature.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#verify_any_sig">verify_any_sig (message, signature, pubkey)</a></td>
+	<td class="summary">Returns whether a signature and public key verify a message.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#get_pubkey">get_pubkey ()</a></td>
@@ -349,7 +361,9 @@
     <dd>
     Given a signature string, returns whether the state verifies it.
  The signature string must be 64 bytes long and have been made using one of
- the <a href="../modules/crypto.html#sign_state">sign_state</a> objects. Resets the state after.
+ the <a href="../modules/crypto.html#sign_state">sign_state</a> objects. Resets the state after. This also only verifies
+ signatures created using this specific instance of crypto.lua (specifically,
+ signatures created with the same seed as given in the <code>seed</code> file).
 
 
     <h3>Parameters:</h3>
@@ -376,6 +390,48 @@
     <h3>Usage:</h3>
     <ul>
         <pre class="example">sign_obj:insert(<span class="string">"verify me"</span>):verify(past_signature)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "sign_state:verify_any"></a>
+    <strong>sign_state:verify_any (sig, pubkey)</strong>
+    </dt>
+    <dd>
+    Given a signature string, returns whether the state verifies it.
+ The signature string must be 64 bytes long and have been made using one of
+ the <a href="../modules/crypto.html#sign_state">sign_state</a> objects. Resets the state after.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">sig</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The signature to verify. Must be exactly 64 bytes long.
+        </li>
+        <li><span class="parameter">pubkey</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The public key to verify against. Must be exactly 32
+ bytes long.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        <code>true</code> if it's verified, <code>false</code> otherwise.
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/crypto.html#sign_state:get_signature">get_signature</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sign_obj:insert(<span class="string">"verify me"</span>):verify_any(past_signature, mypubkey)</pre>
     </ul>
 
 </dd>
@@ -443,6 +499,91 @@
 
 </dd>
     <dt>
+    <a name = "verify_sig"></a>
+    <strong>verify_sig (message, signature)</strong>
+    </dt>
+    <dd>
+    Returns whether a message is verified with a given signature.
+ As this uses a different signature scheme (Ed25519) than the <a href="../modules/crypto.html#sign_state">sign_state</a>s,
+ it cannot verify those signatures. This also only verifies signatures created
+ using this specific instance of crypto.lua (specifically, signatures created
+ with the same seed as given in the <code>seed</code> file).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">message</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The message to verify.
+        </li>
+        <li><span class="parameter">signature</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The signature to verify. Must be exactly 64 bytes
+ long.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        Whether <code>message</code> is successfully verified by <code>signature</code>.
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/crypto.html#verify_any_sig">verify_any_sig</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> mysig = crypto.get_sig(<span class="string">"get my signature please"</span>)
+<span class="keyword">local</span> success = crypto.verify_sig(<span class="string">"get my signature please"</span>, mysig)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "verify_any_sig"></a>
+    <strong>verify_any_sig (message, signature, pubkey)</strong>
+    </dt>
+    <dd>
+    Returns whether a signature and public key verify a message.
+ As this uses a different signature scheme (Ed25519) than the <a href="../modules/crypto.html#sign_state">sign_state</a>s,
+ it cannot verify those signatures.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">message</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The message to verify.
+        </li>
+        <li><span class="parameter">signature</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The signature to verify. Must be exactly 64 bytes
+ long.
+        </li>
+        <li><span class="parameter">pubkey</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         The public key to verify against. Must be exactly 32
+ bytes long.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        Whether <code>message</code> is successfully verified by <code>signature</code> and
+ <code>pubkey</code>.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
     <a name = "get_pubkey"></a>
     <strong>get_pubkey ()</strong>
     </dt>
@@ -473,7 +614,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-12-19 10:58:43 </i>
+<i style="float:right;">Last updated 2019-01-02 07:49:49 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
