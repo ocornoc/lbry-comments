@@ -59,7 +59,7 @@ local ngx = require "ngx"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "1.0.1"
+local DB_VERSION = "1.0.2"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -952,7 +952,7 @@ function _M.comments.upvote(comment_id, times)
 	elseif type(times) ~= "number" then
 		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "times not an int"
+		return nil, "times not int"
 	end
 	
 	local data, err_msg = _M.comments.get_data(comment_id)
@@ -994,7 +994,7 @@ function _M.comments.downvote(comment_id, times)
 	elseif type(times) ~= "number" then
 		return nil, "times not number"
 	elseif times % 1 ~= 0 then
-		return nil, "times not an int"
+		return nil, "times not int"
 	end
 	
 	local data, err_msg = _M.comments.get_data(comment_id)
