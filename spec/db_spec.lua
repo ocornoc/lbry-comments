@@ -424,6 +424,24 @@ describe("The comments database", function()
 		assert.are.same(com4res, {})
 	end)
 	
+	it("should error when getting replies of bad comments", function()
+		local success, err_msg
+		
+		success, err_msg = db.comments.get_replies(comid_nonnum)
+		assert.is_falsy(success)
+		assert.is_equal("id not number", err_msg)
+		
+		success, err_msg = db.comments.get_replies(comid_nonint)
+		assert.is_falsy(success)
+		assert.is_equal("id not int", err_msg)
+	end)
+	
+	it("shouldn't get replies of nonexistent comments", function()
+		local success, err_msg = db.comments.get_replies(comid_bad)
+		assert.is_falsy(success)
+		assert.is_equal("comment doesnt exist", err_msg)
+	end)
+	
 	it("should be able to upvote comments", function()
 		-- Test single upvotes and multi-upvotes.
 		-- Alphanumeric-key'd data of comment 1.
