@@ -1,0 +1,484 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>LBRY Comments Documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>LBRY Comments</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Fields">Fields</a></li>
+<li><a href="#Methods">Methods</a></li>
+</ul>
+
+
+<h2>Classes</h2>
+<ul class="nowrap">
+  <li><strong>mutex</strong></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/spec.crypto_spec.html">spec.crypto_spec</a></li>
+  <li><a href="../modules/spec.db_spec.html">spec.db_spec</a></li>
+  <li><a href="../modules/spec.mutex_spec.html">spec.mutex_spec</a></li>
+  <li><a href="../modules/api.html">api</a></li>
+  <li><a href="../modules/crypto.html">crypto</a></li>
+  <li><a href="../modules/db.html">db</a></li>
+  <li><a href="../modules/server.html">server</a></li>
+</ul>
+<h2>Topics</h2>
+<ul class="">
+  <li><a href="../topics/README.md.html">README</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Class <code>mutex</code></h1>
+<p>A high-level mutex class using Szymanski's Algorthim.</p>
+<p>
+
+</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>Copyright</strong>: 2018 Grayson Burton and Oleg Silkin</li>
+        <li><strong>License</strong>: Expat MIT</li>
+        <li><strong>Author</strong>: Grayson Burton</li>
+    </ul>
+
+
+<h2><a href="#Fields">Fields</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#mutex.__type">mutex.__type</a></td>
+	<td class="summary">The type of the object.</td>
+	</tr>
+</table>
+<h2><a href="#Methods">Methods</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#mutex:get_id">mutex:get_id ()</a></td>
+	<td class="summary">Returns the ID of the mutex.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:get_flag">mutex:get_flag ()</a></td>
+	<td class="summary">Returns the flag of the mutex.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:get_state">mutex:get_state ()</a></td>
+	<td class="summary">Returns the flag state of the mutex.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:enter">mutex:enter ()</a></td>
+	<td class="summary">Signals that the mutex wants to enter its critical section.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:exit">mutex:exit (self)</a></td>
+	<td class="summary">Signals that the mutex is done with its critical section.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:call_when_safe">mutex:call_when_safe (func[, ...])</a></td>
+	<td class="summary">Enters its critical section and executes a function.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:register_with">mutex:register_with (other_mutex)</a></td>
+	<td class="summary">Registers this mutex with another mutex's state.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:new_state">mutex:new_state ()</a></td>
+	<td class="summary">Registers the mutex with a fresh, empty flag state.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#mutex:compress_state">mutex:compress_state ()</a></td>
+	<td class="summary">Changes the ID to the minimum positive available ID.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Fields"></a>Fields</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "mutex.__type"></a>
+    <strong>mutex.__type</strong>
+    </dt>
+    <dd>
+    The type of the object.
+ The string "mutex".
+
+
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "mutex:get_id"></a>
+    <strong>mutex:get_id ()</strong>
+    </dt>
+    <dd>
+    Returns the ID of the mutex.
+ The returned ID is an unsigned int >= 1 that can be used in this object's
+ flag state to refer to its flag.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The ID.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">my_cool_mutex:get_id()  <span class="comment">--&gt; 20</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:get_flag"></a>
+    <strong>mutex:get_flag ()</strong>
+    </dt>
+    <dd>
+    Returns the flag of the mutex.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">int</span></span>
+        The flag of the mutex.
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../classes/mutex.html#mutex:get_state">get_state</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> my_mutex = new_mutex()
+my_mutex:get_flag()  <span class="comment">--&gt; 0
+</span>my_mutex:enter()
+my_mutex:get-flag()  <span class="comment">--&gt; 4
+</span>my_mutex:exit()
+my_mutex:get_flag()  <span class="comment">--&gt; 0</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:get_state"></a>
+    <strong>mutex:get_state ()</strong>
+    </dt>
+    <dd>
+    Returns the flag state of the mutex.
+ A flag state is a potentially-spare array of flags. A flag is a value between
+ (inclusively) 0 and 4. If the flag is 0, then the mutex isn't competing. If
+ the flag is 4, then the mutex has won the competition and is now in its
+ critical section. Otherwise, the mutex is in the process of competing for a
+ turn to execute its critical section.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        The flag state that the mutex belongs to.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> my_mutex1, my_mutex2 = new_mutex(), new_mutex()
+ <span class="keyword">local</span> state = my_mutex1:register_with(my_mutex2):get_state()  <span class="comment">--&gt; table</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:enter"></a>
+    <strong>mutex:enter ()</strong>
+    </dt>
+    <dd>
+    Signals that the mutex wants to enter its critical section.
+ This changes its flag to <code>1</code> (see <a href="../classes/mutex.html#mutex:get_flag">get_flag</a>) and the mutex (thread) is
+ blocked until it can gain control of the mutex. Rather than busy-waiting, it
+ tells the ngx thread scheduler to move on to another thread.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+    <h3>Raises:</h3>
+    "<code>mutex spinning for control</code>" if the mutex is already waiting to get
+ its turn for entering its critical section.
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../classes/mutex.html#mutex:exit">exit</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> my_mutex = new_mutex()
+my_mutex:enter()
+<span class="global">print</span>(<span class="string">"im in my critical section, mah!"</span>)
+my_mutex:exit()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:exit"></a>
+    <strong>mutex:exit (self)</strong>
+    </dt>
+    <dd>
+    Signals that the mutex is done with its critical section.
+ The mutex blocks momentarily and then exits from the critical section,
+ setting its flag to <code>0</code>. This releases the mutex.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">self</span>
+            <span class="types"><a class="type" href="../classes/mutex.html#">mutex</a></span>
+         This object.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+    <h3>Raises:</h3>
+    "<code>mutex not in critical section</code>" if the mutex isn't in its critical
+ section already.
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../classes/mutex.html#mutex:exit">exit</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> my_mutex = new_mutex()
+my_mutex:enter()
+<span class="global">print</span>(<span class="string">"im in my critical section, mah!"</span>)
+my_mutex:exit()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:call_when_safe"></a>
+    <strong>mutex:call_when_safe (func[, ...])</strong>
+    </dt>
+    <dd>
+    Enters its critical section and executes a function.
+ The mutex blocks until it can enter its critical section, then executes the
+ function with the given arguments. Once that is complete, the mutex exits its
+ critical section and returns the results of the function in a table.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">func</span>
+            <span class="types"><span class="type">function</span></span>
+         The function to call in the critical section.
+        </li>
+        <li><span class="parameter">...</span>
+         Any arguments to pass to the function <code>func</code> when it is
+ called.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">tab</span></span>
+        The results from the function call.
+    </ol>
+
+    <h3>Raises:</h3>
+    "<code>mutex spinning for control</code>" if the mutex is already waiting to get
+ its turn for entering its critical section.
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> my_mutex = new_mutex()
+<span class="keyword">local</span> <span class="keyword">function</span> my_func(i) <span class="keyword">return</span> i ^ <span class="number">2</span> <span class="keyword">end</span>
+my_mutex:call_when_safe(my_func, <span class="number">5</span>)  <span class="comment">--&gt; {25}</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:register_with"></a>
+    <strong>mutex:register_with (other_mutex)</strong>
+    </dt>
+    <dd>
+    Registers this mutex with another mutex's state.
+ When a mutex is registered with another mutex's state, they can both compete
+ for the ability to enter their critical section. If two mutexes are
+ registered with different states, they'll be unaware of each other and they
+ can't actually mutually exclude each other. They must be in the same state.</p>
+
+<p> If the other mutex shares the same state as this mutex, nothing really
+ happens.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">other_mutex</span>
+            <span class="types"><a class="type" href="../classes/mutex.html#">mutex</a></span>
+         The mutex whose state this mutex will register
+ with.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="../classes/mutex.html#">mutex</a></span>
+        self
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../classes/mutex.html#mutex:get_state">get_state</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> mutex1, mutex2 = new_mutex(), new_mutex()
+mutex1:register_with(mutex2):enter()
+<span class="global">print</span> <span class="string">"Now we're in our critical section, mutex2 must wait for us to finish."</span>
+mutex1:exit()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:new_state"></a>
+    <strong>mutex:new_state ()</strong>
+    </dt>
+    <dd>
+    Registers the mutex with a fresh, empty flag state.
+ Also, the flag is set to <code>0</code> (ie, the mutex is forced out of its critical
+ section). Don't use this on a mutex in its critical section.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="../classes/mutex.html#">mutex</a></span>
+        self
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> mutex1, mutex2 = new_mutex(), new_mutex()
+mutex1:register_with(mutex2)
+<span class="global">print</span> <span class="string">"I'm in the same state as mutex2!"</span>
+mutex1:new_state()
+<span class="global">print</span> <span class="string">"Now I'm in my own state!"</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "mutex:compress_state"></a>
+    <strong>mutex:compress_state ()</strong>
+    </dt>
+    <dd>
+    Changes the ID to the minimum positive available ID.
+ The ID will be an int >= 1. If the minimum positive available ID is larger
+ than the current ID (ie, the mutex already has the smallest ID it can get),
+ the ID isn't changed.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="../classes/mutex.html#">mutex</a></span>
+        self
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> mutex1, mutex2 = new_mutex(), new_mutex()
+mutex1:register_with(mutex2)
+mutex2:new_state()
+<span class="global">print</span>(mutex1:get_id())                   <span class="comment">--&gt; 2
+</span><span class="global">print</span>(mutex1:compress_state():get_id())  <span class="comment">--&gt; 1</span></pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2019-01-08 01:25:30 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

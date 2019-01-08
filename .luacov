@@ -1,4 +1,6 @@
 return {
 	["db"]   = "src/db.lua",
-	["db.*"] = "src"
+	["db.*"] = "src",
+	["mutex"] = "src/mutex",
+	["mutex.*"] = "src",
 }

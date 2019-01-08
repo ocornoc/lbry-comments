@@ -16,4 +16,8 @@ return {
 	crypto = {
 		tags = "api",
 	},
+	
+	mutex = {
+		tags = {"api", "class"},
+	},
 }
