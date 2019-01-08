@@ -43,23 +43,17 @@ local backup_rpath = "backups"
 -- @section constants
 -- @local
 
---- Uses LuaFileSystem for its directory creation.
 local lfs = require "lfs"
-
---- Uses luasql.sqlite3.
 local sql_driver = require "luasql.sqlite3"
---- Uses crypto.
 local crypto = require "crypto"
---- @{sql_driver} requires this setup.
--- No idea why to be honest, but whatever.
 local sql = sql_driver.sqlite3()
---- Uses ngx.
 local ngx = require "ngx"
+local new_mutex = require "mutex"
 
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "1.0.5"
+local DB_VERSION = "1.1.0"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -248,6 +242,19 @@ local pubkey_b64 = accouts:escape(b64_encode(crypto:get_pubkey()))
 -- Helper Functions
 -- @section helpers
 -- @local
+
+--- Returns a mutex that can compete for write-acces to the database.
+-- @treturn mutex
+local function new_db_write_mutex()
+	if not _G.db_mutexes then
+		_G.db_mutexes = {}
+		_G.db_mutexes.write_mutex = new_mutex()
+	elseif not _G.db_mutexes.write_mutex then
+		_G.db_mutexes.write_mutex = new_mutex()
+	end
+	
+	return new_mutex():register_with(_G.db_mutexes.write_mutex)
+end
 
 --- Returns the number of claims stored.
 -- @treturn[1] int The number of claims.
@@ -558,18 +565,28 @@ function _M.claims.upvote(claim_uri, times)
 		return nil, "times not int"
 	end
 	
-	local data, err_msg = _M.claims.get_data(claim_uri)
+	local votes
+	local mutex = new_db_write_mutex()
+	local results = mutex:call_when_safe(function()
+		local data, err_msg = _M.claims.get_data(claim_uri)
+		
+		if not data or err_msg then
+			return data, err_msg
+		end
+		
+		votes = times + data.upvotes
+		
+		accouts:execute(
+		 "UPDATE claims SET upvotes = " .. votes ..
+		 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
+		)
+	end)
 	
-	if not data or err_msg then
-		return data, err_msg
+	if votes then
+		return votes
+	else
+		return nil, results[2]
 	end
-	
-	local _, err_msg = accouts:execute(
-	 "UPDATE claims SET upvotes = " .. times + data.upvotes ..
-	 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
-	)
-	
-	return times + data.upvotes
 end
 
 --- Downvotes a claim and returns the new total.
@@ -591,18 +608,28 @@ function _M.claims.downvote(claim_uri, times)
 		return nil, "times not int"
 	end
 	
-	local data, err_msg = _M.claims.get_data(claim_uri)
+	local votes
+	local mutex = new_db_write_mutex()
+	local results = mutex:call_when_safe(function()
+		local data, err_msg = _M.claims.get_data(claim_uri)
+		
+		if not data or err_msg then
+			return data, err_msg
+		end
+		
+		votes = times + data.downvotes
+		
+		accouts:execute(
+		 "UPDATE claims SET downvotes = " .. votes ..
+		 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
+		)
+	end)
 	
-	if not data or err_msg then
-		return data, err_msg
+	if votes then
+		return votes
+	else
+		return nil, results[2]
 	end
-	
-	local _, err_msg = accouts:execute(
-	 "UPDATE claims SET downvotes = " .. times + data.downvotes ..
-	 " WHERE lbry_perm_uri = '" .. data.lbry_perm_uri .. "';"
-	)
-	
-	return times + data.downvotes
 end
 
 --- Returns the URI from a claim index.
@@ -733,13 +760,20 @@ function _M.comments.new(claim_uri, poster, message)
 	-- We strip all beginning and ending whitespace from 'message'.
 	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
 	
-	local _, err_msg = accouts:execute(
-	 "INSERT INTO comments (claim_index, poster_name, post_time," ..
-	 " message) VALUES (" .. claim_index .. ", '" .. poster_name .. "', " ..
-	 post_time .. ", '" .. message .. "');"
-	)
+	local mutex = new_db_write_mutex()
+	local comm_id
 	
-	return get_latest_comment()
+	mutex:call_when_safe(function()
+		accouts:execute(
+		 "INSERT INTO comments (claim_index, poster_name, post_time," ..
+		 " message) VALUES (" .. claim_index .. ", '" .. poster_name ..
+		 "', " .. post_time .. ", '" .. message .. "');"
+		)
+		
+		comm_id = get_latest_comment()
+	end)
+	
+	return comm_id
 end
 
 --- Inserts a new reply into the comments database.
@@ -780,14 +814,21 @@ function _M.comments.new_reply(parent_id, poster, message)
 	-- We strip all beginning and ending whitespace from 'message'.
 	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
 	
-	local _, err_msg = accouts:execute(
-	 "INSERT INTO comments (claim_index, poster_name, parent_com, " ..
-	 "post_time, message) VALUES (" .. claim_index .. ", '" ..
-	 poster_name .. "', " .. parent_id .. ", " .. post_time .. ", '" ..
-	 message .. "');"
-	)
+	local mutex = new_db_write_mutex()
+	local comm_id
 	
-	return get_latest_comment()
+	mutex:call_when_safe(function()
+		accouts:execute(
+		 "INSERT INTO comments (claim_index, poster_name, " ..
+		 "parent_com, post_time, message) VALUES (" .. claim_index ..
+		 ", '" .. poster_name .. "', " .. parent_id .. ", " ..
+		 post_time .. ", '" .. message .. "');"
+		)
+		
+		comm_id = get_latest_comment()
+	end)
+	
+	return comm_id
 end
 
 --- Returns the data for a given comment.
@@ -900,18 +941,28 @@ function _M.comments.upvote(comment_id, times)
 		return nil, "times not int"
 	end
 	
-	local data, err_msg = _M.comments.get_data(comment_id)
+	local votes
+	local mutex = new_db_write_mutex()
+	local results = mutex:call_when_safe(function()
+		local data, err_msg = _M.comments.get_data(comment_id)
+		
+		if not data or err_msg then
+			return data, err_msg
+		end
+		
+		votes = times + data.upvotes
+		
+		accouts:execute(
+		 "UPDATE comments SET upvotes = " .. votes ..
+		 " WHERE comm_index = '" .. comment_id .. "';"
+		)
+	end)
 	
-	if not data or err_msg then
-		return data, err_msg
+	if votes then
+		return votes
+	else
+		return nil, results[2]
 	end
-	
-	local _, err_msg = accouts:execute(
-	 "UPDATE comments SET upvotes = " .. times + data.upvotes ..
-	 " WHERE comm_index = '" .. comment_id .. "';"
-	)
-	
-	return times + data.upvotes
 end
 
 --- Downvotes a comment and returns the new total.
@@ -933,18 +984,28 @@ function _M.comments.downvote(comment_id, times)
 		return nil, "times not int"
 	end
 	
-	local data, err_msg = _M.comments.get_data(comment_id)
+	local votes
+	local mutex = new_db_write_mutex()
+	local results = mutex:call_when_safe(function()
+		local data, err_msg = _M.comments.get_data(comment_id)
+		
+		if not data or err_msg then
+			return data, err_msg
+		end
+		
+		votes = times + data.downvotes
+		
+		accouts:execute(
+		 "UPDATE comments SET downvotes = " .. votes ..
+		 " WHERE comm_index = '" .. comment_id .. "';"
+		)
+	end)
 	
-	if not data or err_msg then
-		return data, err_msg
+	if votes then
+		return votes
+	else
+		return nil, results[2]
 	end
-	
-	local _, err_msg = accouts:execute(
-	 "UPDATE comments SET downvotes = " .. times + data.downvotes ..
-	 " WHERE comm_index = '" .. comment_id .. "';"
-	)
-	
-	return times + data.downvotes
 end
 
 --------------------------------------------------------------------------------
