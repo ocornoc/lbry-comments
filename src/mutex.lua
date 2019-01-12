@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ]]
 
 --------------------------------------------------------------------------------
--- A high-level mutex class using Szymanski's Algorthim.
+-- A high-level mutex class using Szymanski's Algorithm.
 -- @classmod mutex
 -- @alias mc_prototypes
 -- @copyright 2018 Grayson Burton and Oleg Silkin
