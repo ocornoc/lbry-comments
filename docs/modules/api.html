@@ -337,7 +337,12 @@
 
 <p> <code>params.uri</code>: A string containing a full-length permanent LBRY claim URI.
  If the URI isn't valid/acceptable, the function will return with an
- <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
+
+<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
+ returned uses the old fields or uses the new fields. The differences between
+ the new and old fields are described in the return section. Defaults to
+ <code>false</code>.
         </li>
     </ul>
 
@@ -347,7 +352,7 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
          The data associated with that URI, if the URI has data.</p>
 
-<p> Fields:</p>
+<p> Old fields:</p>
 
 <p> <code>claim_index</code>: An int holding the index of the claim.</p>
 
@@ -355,6 +360,20 @@
  "lbry://".</p>
 
 <p> <code>add_time</code>: An int representing the time of the row's insertion into the
+ database, stored as UTC Epoch seconds.</p>
+
+<p> <code>upvotes</code>: An int representing the amount of upvotes for that claim.</p>
+
+<p> <code>downvotes</code>: An int representing the amount of downvotes for that claim.</p>
+
+
+<p> New fields:</p>
+
+<p> <code>claim_index</code>: An int holding the index of the claim.</p>
+
+<p> <code>uri</code>: The represented permanent LBRY claim's URI. Includes the "lbry://".</p>
+
+<p> <code>time_added</code>: An int representing the time of the row's insertion into the
  database, stored as UTC Epoch seconds.</p>
 
 <p> <code>upvotes</code>: An int representing the amount of upvotes for that claim.</p>
@@ -540,7 +559,12 @@
 
 <p> <code>params.uri</code>: A string containing a full-length permanent LBRY claim URI.
  If the URI isn't valid/acceptable, the function will return with an
- <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
+
+<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
+ returned uses the old fields or uses the new fields. The differences between
+ the new and old fields are described in the return section. Defaults to
+ <code>false</code>.
         </li>
     </ul>
 
@@ -550,7 +574,7 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
          An array of top-level comments.</p>
 
-<p> Fields for each comment:</p>
+<p> Old fields for each comment:</p>
 
 <p> <code>comm_index</code>: An int holding the index of the comment.</p>
 
@@ -564,6 +588,29 @@
  top-level comments, the field is omitted (<code>nil</code>).</p>
 
 <p> <code>post_time</code>: An int representing the time of the row's insertion into the
+ database, stored as UTC Epoch seconds.</p>
+
+<p> <code>message</code>: A string holding the body of the comment.</p>
+
+<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
+
+<p> <code>downvotes</code>: An int representing the amount of downvotes for that
+ comment.</p>
+
+<p> New fields for each comment:</p>
+
+<p> <code>comment_index</code>: An int holding the index of the comment.</p>
+
+<p> <code>claim_index</code>: An int holding the index of the claims that this is a
+ comment on.</p>
+
+<p> <code>author</code>: A string holding the name of the poster.</p>
+
+<p> <code>parent_index</code>: An int holding the <code>comment_index</code> field of another comment
+ object that is the parent of this comment. Because these comments are always
+ top-level comments, the field is omitted (<code>nil</code>).</p>
+
+<p> <code>time_posted</code>: An int representing the time of the row's insertion into the
  database, stored as UTC Epoch seconds.</p>
 
 <p> <code>message</code>: A string holding the body of the comment.</p>
@@ -712,7 +759,12 @@
          The table of parameters.</p>
 
 <p> <code>params.comm_index</code>: An int containing the ID of the comment that data is
- being requested for.
+ being requested for.</p>
+
+<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
+ returned uses the old fields or uses the new fields. The differences between
+ the new and old fields are described in the return section. Defaults to
+ <code>false</code>.
         </li>
     </ul>
 
@@ -722,7 +774,7 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
          A comment object.</p>
 
-<p> Fields:</p>
+<p> Old fields:</p>
 
 <p> <code>comm_index</code>: An int holding the index of the comment.</p>
 
@@ -743,7 +795,29 @@
 <p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
 
 <p> <code>downvotes</code>: An int representing the amount of downvotes for that
- comment.
+ comment.</p>
+
+<p> New fields:</p>
+
+<p> <code>comment_index</code>: An int holding the index of the comment.</p>
+
+<p> <code>claim_index</code>: An int holding the index of the claims that this is a
+ comment on.</p>
+
+<p> <code>author</code>: A string holding the name of the poster.</p>
+
+<p> <code>parent_index</code>: An int holding the <code>comment_index</code> field of another comment
+ object that is the parent of this comment. Because these comments are always
+ top-level comments, the field is omitted (<code>nil</code>).</p>
+
+<p> <code>time_posted</code>: An int representing the time of the row's insertion into the
+ database, stored as UTC Epoch seconds.</p>
+
+<p> <code>message</code>: A string holding the body of the comment.</p>
+
+<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
+
+<p> <code>downvotes</code>: An int representing the amount of downvotes for that
     </ol>
      <h3>Or</h3>
     <ol>
@@ -892,7 +966,12 @@
          The table of parameters.</p>
 
 <p> <code>params.comm_index</code>: An int containing the ID of the comment whose replies
- will be returned.
+ will be returned.</p>
+
+<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
+ returned uses the old fields or uses the new fields. The differences between
+ the new and old fields are described in the return section. Defaults to
+ <code>false</code>.
         </li>
     </ul>
 
@@ -902,7 +981,7 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
          An array of replies.</p>
 
-<p> Fields for each comment:</p>
+<p> Old fields for each comment:</p>
 
 <p> <code>comm_index</code>: An int holding the index of the comment.</p>
 
@@ -923,7 +1002,29 @@
 <p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
 
 <p> <code>downvotes</code>: An int representing the amount of downvotes for that
- comment.
+ comment.</p>
+
+<p> New fields for each comment:</p>
+
+<p> <code>comment_index</code>: An int holding the index of the comment.</p>
+
+<p> <code>claim_index</code>: An int holding the index of the claims that this is a
+ comment on.</p>
+
+<p> <code>author</code>: A string holding the name of the poster.</p>
+
+<p> <code>parent_index</code>: An int holding the <code>comment_index</code> field of another comment
+ object that is the parent of this comment. Because these comments are always
+ top-level comments, the field is omitted (<code>nil</code>).</p>
+
+<p> <code>time_posted</code>: An int representing the time of the row's insertion into the
+ database, stored as UTC Epoch seconds.</p>
+
+<p> <code>message</code>: A string holding the body of the comment.</p>
+
+<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
+
+<p> <code>downvotes</code>: An int representing the amount of downvotes for that
     </ol>
      <h3>Or</h3>
     <ol>
@@ -951,7 +1052,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-01-08 10:47:57 </i>
+<i style="float:right;">Last updated 2019-01-11 21:16:10 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
