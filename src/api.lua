@@ -34,7 +34,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local API_VERSION = "1.2.0"
+local API_VERSION = "1.2.1"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -890,57 +890,7 @@ end
 --
 -- `params.comm_index`: An int containing the ID of the comment whose replies
 -- will be returned.
---
--- `params.better_keys` [optional]: A boolean describing whether the data
--- returned uses the old fields or uses the new fields. The differences between
--- the new and old fields are described in the return section. Defaults to
--- `false`.
--- @treturn[1] table An array of replies.
---
--- Old fields for each comment:
---
--- `comm_index`: An int holding the index of the comment.
---
--- `claim_index`: An int holding the index of the claims that this is a
--- comment on.
---
--- `poster_name`: A string holding the name of the poster.
---
--- `parent_com`: An int holding the `comment_index` field of another comment
--- object that is the parent of this comment. Because these comments are always
--- top-level comments, the field is omitted (`nil`).
---
--- `post_time`: An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds.
---
--- `message`: A string holding the body of the comment.
---
--- `upvotes`: An int representing the amount of upvotes for that comment.
---
--- `downvotes`: An int representing the amount of downvotes for that
--- comment.
--- 
--- New fields for each comment:
---
--- `comment_index`: An int holding the index of the comment.
---
--- `claim_index`: An int holding the index of the claims that this is a
--- comment on.
---
--- `author`: A string holding the name of the poster.
---
--- `parent_index`: An int holding the `comment_index` field of another comment
--- object that is the parent of this comment. Because these comments are always
--- top-level comments, the field is omitted (`nil`).
---
--- `time_posted`: An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds.
---
--- `message`: A string holding the body of the comment.
---
--- `upvotes`: An int representing the amount of upvotes for that comment.
---
--- `downvotes`: An int representing the amount of downvotes for that
+-- @treturn[1] table An array of IDs for replies.
 -- @treturn[2] NULL There is no comment with the given ID.
 -- @usage {"jsonrpc": "2.0", "method": "get_comment_replies", "id": 1,
 --  "params": {
@@ -952,9 +902,6 @@ function api.get_comment_replies(params)
 		return nil, make_error"'comm_index' must be an int"
 	elseif params.comm_index % 1 ~= 0 then
 		return nil, make_error"'comm_index' must be an int"
-	elseif type(params.better_keys) ~= "boolean" and
-	       params.better_keys ~= nil then
-		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local replies, err_msg = db.comments.get_replies(params.comm_index)
@@ -963,15 +910,6 @@ function api.get_comment_replies(params)
 		return json.null
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
-	elseif params.better_keys then
-		data.comment_index = data.comm_index
-		data.author = data.poster_name
-		data.parent_index = data.parent_com
-		data.time_posted = data.post_time
-		data.comm_index = nil
-		data.poster_name = nil
-		data.parent_com = nil
-		data.post_time = nil
 	end
 	
 	return replies
