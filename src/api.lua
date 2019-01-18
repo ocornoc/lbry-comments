@@ -179,7 +179,7 @@ end
 --
 -- New fields:
 --
--- `claim_index`: An int holding the index of the claim.
+-- `claim_id`: An int holding the index of the claim.
 --
 -- `uri`: The represented permanent LBRY claim's URI. Includes the "lbry://".
 --
@@ -217,6 +217,8 @@ function api.get_claim_data(params)
 		if params.better_keys then
 			data.uri = data.lbry_perm_uri
 			data.time_added = data.add_time
+			data.claim_id = data.claim_index
+			data.claim_index = nil
 			data.lbry_perm_uri = nil
 			data.add_time = nil
 		end
@@ -443,7 +445,7 @@ end
 --
 -- `poster_name`: A string holding the name of the poster.
 --
--- `parent_com`: An int holding the `comment_index` field of another comment
+-- `parent_com`: An int holding the `comment_id` field of another comment
 -- object that is the parent of this comment. Because these comments are always
 -- top-level comments, the field is omitted (`nil`).
 --
@@ -459,14 +461,14 @@ end
 -- 
 -- New fields for each comment:
 --
--- `comment_index`: An int holding the index of the comment.
+-- `comment_id`: An int holding the index of the comment.
 --
--- `claim_index`: An int holding the index of the claims that this is a
+-- `claim_id`: An int holding the index of the claims that this is a
 -- comment on.
 --
 -- `author`: A string holding the name of the poster.
 --
--- `parent_index`: An int holding the `comment_index` field of another comment
+-- `parent_id`: An int holding the `comment_id` field of another comment
 -- object that is the parent of this comment. Because these comments are always
 -- top-level comments, the field is omitted (`nil`).
 --
@@ -508,9 +510,9 @@ function api.get_claim_comments(params)
 		return tlcs
 	elseif params.better_keys then
 		for _,v in ipairs(tlcs) do
-			v.comment_index = v.comm_index
+			v.comment_id = v.comm_index
 			v.author = v.poster_name
-			v.parent_index = v.parent_com
+			v.parent_id = v.parent_com
 			v.time_posted = v.post_time
 			v.comm_index = nil
 			v.poster_name = nil
@@ -680,7 +682,7 @@ end
 --
 -- `poster_name`: A string holding the name of the poster.
 --
--- `parent_com`: An int holding the `comment_index` field of another comment
+-- `parent_com`: An int holding the `comment_id` field of another comment
 -- object that is the parent of this comment. Because these comments are always
 -- top-level comments, the field is omitted (`nil`).
 --
@@ -696,14 +698,14 @@ end
 -- 
 -- New fields:
 --
--- `comment_index`: An int holding the index of the comment.
+-- `comment_id`: An int holding the index of the comment.
 --
--- `claim_index`: An int holding the index of the claims that this is a
+-- `claim_id`: An int holding the index of the claims that this is a
 -- comment on.
 --
 -- `author`: A string holding the name of the poster.
 --
--- `parent_index`: An int holding the `comment_index` field of another comment
+-- `parent_id`: An int holding the `comment_id` field of another comment
 -- object that is the parent of this comment. Because these comments are always
 -- top-level comments, the field is omitted (`nil`).
 --
@@ -744,10 +746,12 @@ function api.get_comment_data(params)
 	
 	if data and not err_msg then
 		if params.better_keys then
-			data.comment_index = data.comm_index
+			data.comment_id = data.comm_index
 			data.author = data.poster_name
-			data.parent_index = data.parent_com
+			data.parent_id = data.parent_com
 			data.time_posted = data.post_time
+			data.claim_id = data.claim_index
+			data.claim_index = nil
 			data.comm_index = nil
 			data.poster_name = nil
 			data.parent_com = nil
