@@ -34,7 +34,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local API_VERSION = "1.1.0"
+local API_VERSION = "1.1.1"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -444,6 +444,8 @@ function api.get_claim_comments(params)
 		return json.null
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
+	elseif #tlcs == 0 then
+		return json.empty_array
 	else
 		return tlcs
 	end
@@ -825,6 +827,8 @@ function api.get_comment_replies(params)
 		return json.null
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
+	elseif #replies == 0 then
+		return json.empty_array
 	else
 		return replies
 	end
