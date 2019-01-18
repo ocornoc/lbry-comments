@@ -224,7 +224,7 @@ end
 -- @usage local my_mutex = new_mutex()
 -- my_mutex:get_flag()  --> 0
 -- my_mutex:enter()
--- my_mutex:get-flag()  --> 4
+-- my_mutex:get_flag()  --> 4
 -- my_mutex:exit()
 -- my_mutex:get_flag()  --> 0
 -- @see get_state
@@ -270,7 +270,6 @@ end
 -- setting its flag to `0`. This releases the mutex.
 -- @raise "`mutex not in critical section`" if the mutex isn't in its critical
 -- section already.
--- @tparam mutex self This object.
 -- @treturn nil
 -- @usage local my_mutex = new_mutex()
 -- my_mutex:enter()
