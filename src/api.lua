@@ -179,7 +179,7 @@ end
 --
 -- New fields:
 --
--- `claim_index`: An int holding the index of the claim.
+-- `claim_id`: An int holding the index of the claim.
 --
 -- `uri`: The represented permanent LBRY claim's URI. Includes the "lbry://".
 --
@@ -217,6 +217,8 @@ function api.get_claim_data(params)
 		if params.better_keys then
 			data.uri = data.lbry_perm_uri
 			data.time_added = data.add_time
+			data.claim_id = data.claim_index
+			data.claim_index = nil
 			data.lbry_perm_uri = nil
 			data.add_time = nil
 		end
@@ -461,7 +463,7 @@ end
 --
 -- `comment_id`: An int holding the index of the comment.
 --
--- `claim_index`: An int holding the index of the claims that this is a
+-- `claim_id`: An int holding the index of the claims that this is a
 -- comment on.
 --
 -- `author`: A string holding the name of the poster.
@@ -694,7 +696,7 @@ end
 --
 -- `comment_id`: An int holding the index of the comment.
 --
--- `claim_index`: An int holding the index of the claims that this is a
+-- `claim_id`: An int holding the index of the claims that this is a
 -- comment on.
 --
 -- `author`: A string holding the name of the poster.
@@ -744,6 +746,8 @@ function api.get_comment_data(params)
 			data.author = data.poster_name
 			data.parent_id = data.parent_com
 			data.time_posted = data.post_time
+			data.claim_id = data.claim_index
+			data.claim_index = nil
 			data.comm_index = nil
 			data.poster_name = nil
 			data.parent_com = nil
