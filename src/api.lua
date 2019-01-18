@@ -34,7 +34,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local API_VERSION = "1.1.1"
+local API_VERSION = "1.2.2"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -155,9 +155,14 @@ end
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
+-- 
+-- `params.better_keys` [optional]: A boolean describing whether the data
+-- returned uses the old fields or uses the new fields. The differences between
+-- the new and old fields are described in the return section. Defaults to
+-- `false`.
 -- @treturn[1] table The data associated with that URI, if the URI has data.
 --
--- Fields:
+-- Old fields:
 --
 -- `claim_index`: An int holding the index of the claim.
 --
@@ -171,6 +176,19 @@ end
 --
 -- `downvotes`: An int representing the amount of downvotes for that claim.
 --
+--
+-- New fields:
+--
+-- `claim_index`: An int holding the index of the claim.
+--
+-- `uri`: The represented permanent LBRY claim's URI. Includes the "lbry://".
+--
+-- `time_added`: An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds.
+--
+-- `upvotes`: An int representing the amount of upvotes for that claim.
+--
+-- `downvotes`: An int representing the amount of downvotes for that claim.
 -- @treturn[2] NULL There is no associated data.
 -- @usage {"jsonrpc": "2.0", "method": "get_claim_data", "id": 1, "params": {
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"
@@ -188,11 +206,21 @@ function api.get_claim_data(params)
 	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
+	elseif type(params.better_keys) ~= "boolean" and
+	       params.better_keys ~= nil then
+		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local data, err_msg = db.claims.get_data(params.uri)
 	
 	if data and not err_msg then
+		if params.better_keys then
+			data.uri = data.lbry_perm_uri
+			data.time_added = data.add_time
+			data.lbry_perm_uri = nil
+			data.add_time = nil
+		end
+		
 		return data
 	elseif err_msg == "uri doesnt exist" then
 		return json.null
@@ -399,9 +427,14 @@ end
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
+--
+-- `params.better_keys` [optional]: A boolean describing whether the data
+-- returned uses the old fields or uses the new fields. The differences between
+-- the new and old fields are described in the return section. Defaults to
+-- `false`.
 -- @treturn[1] table An array of top-level comments.
 --
--- Fields for each comment:
+-- Old fields for each comment:
 --
 -- `comm_index`: An int holding the index of the comment.
 --
@@ -423,7 +456,29 @@ end
 --
 -- `downvotes`: An int representing the amount of downvotes for that
 -- comment.
+-- 
+-- New fields for each comment:
 --
+-- `comment_index`: An int holding the index of the comment.
+--
+-- `claim_index`: An int holding the index of the claims that this is a
+-- comment on.
+--
+-- `author`: A string holding the name of the poster.
+--
+-- `parent_index`: An int holding the `comment_index` field of another comment
+-- object that is the parent of this comment. Because these comments are always
+-- top-level comments, the field is omitted (`nil`).
+--
+-- `time_posted`: An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds.
+--
+-- `message`: A string holding the body of the comment.
+--
+-- `upvotes`: An int representing the amount of upvotes for that comment.
+--
+-- `downvotes`: An int representing the amount of downvotes for that
+-- comment.
 -- @treturn[2] NULL The claim is not in the database.
 -- @usage {"jsonrpc": "2.0", "method": "get_claim_comments", "id": 1,
 --  "params": {
@@ -436,6 +491,9 @@ function api.get_claim_comments(params)
 	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
+	elseif type(params.better_keys) ~= "boolean" and
+	       params.better_keys ~= nil then
+		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local tlcs, err_msg = db.claims.get_comments(params.uri)
@@ -444,11 +502,27 @@ function api.get_claim_comments(params)
 		return json.null
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
+<<<<<<< HEAD
 	elseif #tlcs == 0 then
 		return json.empty_array
 	else
 		return tlcs
+=======
+	elseif params.better_keys then
+		for _,v in ipairs(tlcs) do
+			v.comment_index = v.comm_index
+			v.author = v.poster_name
+			v.parent_index = v.parent_com
+			v.time_posted = v.post_time
+			v.comm_index = nil
+			v.poster_name = nil
+			v.parent_com = nil
+			v.post_time = nil
+		end
+>>>>>>> master
 	end
+	
+	return tlcs
 end
 
 --------------------------------------------------------------------------------
@@ -593,9 +667,14 @@ end
 --
 -- `params.comm_index`: An int containing the ID of the comment that data is
 -- being requested for.
+--
+-- `params.better_keys` [optional]: A boolean describing whether the data
+-- returned uses the old fields or uses the new fields. The differences between
+-- the new and old fields are described in the return section. Defaults to
+-- `false`.
 -- @treturn[1] table A comment object.
 --
--- Fields:
+-- Old fields:
 --
 -- `comm_index`: An int holding the index of the comment.
 --
@@ -617,7 +696,28 @@ end
 --
 -- `downvotes`: An int representing the amount of downvotes for that
 -- comment.
+-- 
+-- New fields:
 --
+-- `comment_index`: An int holding the index of the comment.
+--
+-- `claim_index`: An int holding the index of the claims that this is a
+-- comment on.
+--
+-- `author`: A string holding the name of the poster.
+--
+-- `parent_index`: An int holding the `comment_index` field of another comment
+-- object that is the parent of this comment. Because these comments are always
+-- top-level comments, the field is omitted (`nil`).
+--
+-- `time_posted`: An int representing the time of the row's insertion into the
+-- database, stored as UTC Epoch seconds.
+--
+-- `message`: A string holding the body of the comment.
+--
+-- `upvotes`: An int representing the amount of upvotes for that comment.
+--
+-- `downvotes`: An int representing the amount of downvotes for that
 -- @treturn[2] NULL The comment is not in the database.
 -- @usage {"jsonrpc": "2.0", "method": "get_comment_data", "id": 1,
 --  "params": {
@@ -638,11 +738,25 @@ function api.get_comment_data(params)
 		return nil, make_error"'comm_index' must be an int"
 	elseif params.comm_index % 1 ~= 0 then
 		return nil, make_error"'comm_index' must be an int"
+	elseif type(params.better_keys) ~= "boolean" and
+	       params.better_keys ~= nil then
+		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local data, err_msg = db.comments.get_data(params.comm_index)
 	
 	if data and not err_msg then
+		if params.better_keys then
+			data.comment_index = data.comm_index
+			data.author = data.poster_name
+			data.parent_index = data.parent_com
+			data.time_posted = data.post_time
+			data.comm_index = nil
+			data.poster_name = nil
+			data.parent_com = nil
+			data.post_time = nil
+		end
+		
 		return data
 	elseif err_msg == "comment doesnt exist" then
 		return json.null
@@ -783,31 +897,7 @@ end
 --
 -- `params.comm_index`: An int containing the ID of the comment whose replies
 -- will be returned.
--- @treturn[1] table An array of replies.
---
--- Fields for each comment:
---
--- `comm_index`: An int holding the index of the comment.
---
--- `claim_index`: An int holding the index of the claims that this is a
--- comment on.
---
--- `poster_name`: A string holding the name of the poster.
---
--- `parent_com`: An int holding the `comment_index` field of another comment
--- object that is the parent of this comment. Because these comments are always
--- top-level comments, the field is omitted (`nil`).
---
--- `post_time`: An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds.
---
--- `message`: A string holding the body of the comment.
---
--- `upvotes`: An int representing the amount of upvotes for that comment.
---
--- `downvotes`: An int representing the amount of downvotes for that
--- comment.
---
+-- @treturn[1] table An array of IDs for replies.
 -- @treturn[2] NULL There is no comment with the given ID.
 -- @usage {"jsonrpc": "2.0", "method": "get_comment_replies", "id": 1,
 --  "params": {
@@ -827,11 +917,16 @@ function api.get_comment_replies(params)
 		return json.null
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
+<<<<<<< HEAD
 	elseif #replies == 0 then
 		return json.empty_array
 	else
 		return replies
+=======
+>>>>>>> master
 	end
+	
+	return replies
 end
 
 --------------------------------------------------------------------------------
