@@ -506,8 +506,6 @@ function api.get_claim_comments(params)
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	elseif #tlcs == 0 then
 		return json.empty_array
-	else
-		return tlcs
 	elseif params.better_keys then
 		for _,v in ipairs(tlcs) do
 			v.comment_id = v.comm_index
@@ -520,7 +518,7 @@ function api.get_claim_comments(params)
 			v.post_time = nil
 		end
 	end
-	
+
 	return tlcs
 end
 
