@@ -371,7 +371,7 @@ describe("The comments database", function()
 		local com1a = db.comments.get_data(com1id)
 		assert.is_truthy(com1a)
 		-- Make sure the gotten data matches with the ID.
-		assert.are_equal(com1a.comm_index, com1id)
+		assert.are_equal(com1a.comment_id, com1id)
 		-- Integer-key'd data of comments 1 and 3.
 		local com1n = db.comments.get_data(com1id, true)
 		local com3n = db.comments.get_data(com3id, true)
@@ -583,8 +583,8 @@ describe("The comments database", function()
 		--   Addresses issue #6
 		--   https://github.com/ocornoc/lbry-comments/issues/6
 		assert.are_not_equal(
-		 db.claims.get_comments(url1)[1].comm_index,
-		 db.claims.get_comments(url1)[2].comm_index
+		 db.claims.get_comments(url1)[1].comment_id,
+		 db.claims.get_comments(url1)[2].comment_id
 		)
 	end)
 	

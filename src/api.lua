@@ -34,7 +34,7 @@ local json = require "cjson"
 local api = {}
 local error_code = {}
 
-local API_VERSION = "1.2.2"
+local API_VERSION = "2.0.0-alpha"
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -155,11 +155,6 @@ end
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
--- 
--- `params.better_keys` [optional]: A boolean describing whether the data
--- returned uses the old fields or uses the new fields. The differences between
--- the new and old fields are described in the return section. Defaults to
--- `false`.
 -- @treturn[1] table The data associated with that URI, if the URI has data.
 --
 -- Old fields:
@@ -206,23 +201,11 @@ function api.get_claim_data(params)
 	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
-	elseif type(params.better_keys) ~= "boolean" and
-	       params.better_keys ~= nil then
-		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local data, err_msg = db.claims.get_data(params.uri)
 	
 	if data and not err_msg then
-		if params.better_keys then
-			data.uri = data.lbry_perm_uri
-			data.time_added = data.add_time
-			data.claim_id = data.claim_index
-			data.claim_index = nil
-			data.lbry_perm_uri = nil
-			data.add_time = nil
-		end
-		
 		return data
 	elseif err_msg == "uri doesnt exist" then
 		return json.null
@@ -429,44 +412,14 @@ end
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
---
--- `params.better_keys` [optional]: A boolean describing whether the data
--- returned uses the old fields or uses the new fields. The differences between
--- the new and old fields are described in the return section. Defaults to
--- `false`.
 -- @treturn[1] table An array of top-level comments.
---
--- Old fields for each comment:
---
--- `comm_index`: An int holding the index of the comment.
---
--- `claim_index`: An int holding the index of the claims that this is a
--- comment on.
---
--- `poster_name`: A string holding the name of the poster.
---
--- `parent_com`: An int holding the `comment_id` field of another comment
--- object that is the parent of this comment. Because these comments are always
--- top-level comments, the field is omitted (`nil`).
---
--- `post_time`: An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds.
---
--- `message`: A string holding the body of the comment.
---
--- `upvotes`: An int representing the amount of upvotes for that comment.
---
--- `downvotes`: An int representing the amount of downvotes for that
--- comment.
--- 
--- New fields for each comment:
 --
 -- `comment_id`: An int holding the index of the comment.
 --
 -- `claim_id`: An int holding the index of the claims that this is a
 -- comment on.
 --
--- `author`: A string holding the name of the poster.
+-- `author`: A string holding the name of the author.
 --
 -- `parent_id`: An int holding the `comment_id` field of another comment
 -- object that is the parent of this comment. Because these comments are always
@@ -493,9 +446,6 @@ function api.get_claim_comments(params)
 	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
-	elseif type(params.better_keys) ~= "boolean" and
-	       params.better_keys ~= nil then
-		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local tlcs, err_msg = db.claims.get_comments(params.uri)
@@ -506,17 +456,6 @@ function api.get_claim_comments(params)
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	elseif #tlcs == 0 then
 		return json.empty_array
-	elseif params.better_keys then
-		for _,v in ipairs(tlcs) do
-			v.comment_id = v.comm_index
-			v.author = v.poster_name
-			v.parent_id = v.parent_com
-			v.time_posted = v.post_time
-			v.comm_index = nil
-			v.poster_name = nil
-			v.parent_com = nil
-			v.post_time = nil
-		end
 	end
 
 	return tlcs
@@ -527,15 +466,13 @@ end
 -- @section pubapicomment
 
 --- Creates a top-level comment and returns its ID.
--- WARNING: The function db.comments.new causes a data race! Make sure to spit
--- on the devs until they fix it.
 -- @tparam table params The table of parameters.
 --
 -- `params.uri`: A string containing a full-length permanent LBRY claim URI.
 -- If the URI isn't valid/acceptable, the function will return with an
 -- `error_code.INVALID_URI` response.
 --
--- `params.poster`: A string containing the username or moniker of the poster.
+-- `params.author`: A string containing the username or moniker of the author.
 -- The string, after having all beginning and end whitespace stripped, must be
 -- at least 2 bytes long and less than 128 bytes long.
 --
@@ -546,7 +483,7 @@ end
 -- @usage {"jsonrpc": "2.0", "method": "comment", "id": 1,
 --  "params": {
 -- 	"uri": "lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c",
--- 	"poster": "A really cool dude",
+-- 	"author": "A really cool dude",
 -- 	"message": "Wow, great video!"
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 14}
@@ -556,31 +493,31 @@ function api.comment(params)
 	elseif not valid_perm_uri(params.uri) then
 		return nil, make_error("'uri' unacceptable form",
 		                       error_code.INVALID_URI)
-	elseif type(params.poster) ~= "string" then
-		return nil, make_error"'poster' must be a string"
-	elseif params.poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, make_error"'poster' only whitespace"
+	elseif type(params.author) ~= "string" then
+		return nil, make_error"'author' must be a string"
+	elseif params.author:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, make_error"'author' only whitespace"
 	elseif type(params.message) ~= "string" then
 		return nil, make_error"'message' must be a string"
 	elseif params.message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
 		return nil, make_error"'message' only whitespace"
 	end
 	
-	-- Strip head-and-tail whitespace from poster and message.
-	params.poster = params.poster:gsub("^%s+", ""):gsub("%s+$", "")
+	-- Strip head-and-tail whitespace from author and message.
+	params.author = params.author:gsub("^%s+", ""):gsub("%s+$", "")
 	params.message = params.message:gsub("^%s+", ""):gsub("%s+$", "")
 	
-	if params.poster:len() > 127 then
-		return nil, make_error"'poster' too long"
-	elseif params.poster:len() < 2 then
-		return nil, make_error"'poster' too short"
-	elseif params.message:len() > 65535 then
+	if params.author:len() > 127 then
+		return nil, make_error"'author' too long"
+	elseif params.author:len() < 2 then
+		return nil, make_error"'author' too short"
+	elseif params.message:len() > 2048 then
 		return nil, make_error"'message' too long"
 	elseif params.message:len() < 2 then
 		return nil, make_error"'message' too short"
 	end
 	
-	local id, err_msg = db.comments.new(params.uri, params.poster,
+	local id, err_msg = db.comments.new(params.uri, params.author,
 	                                    params.message)
 	
 	if id and not err_msg then
@@ -593,50 +530,48 @@ function api.comment(params)
 end
 
 --- Creates a reply and returns its ID.
--- WARNING: The function db.comments.new_reply causes a data race! Make sure to
--- spit on the devs until they fix it.
 -- @tparam table params The table of parameters.
 --
 -- `params.parent_id`: An int containing the comment ID of the comment that this
 -- reply is intended to be a reply to.
 --
--- `params.poster`: A string containing the username or moniker of the poster.
+-- `params.author`: A string containing the username or moniker of the author.
 -- The string, after having all beginning and end whitespace stripped, must be
 -- at least 2 bytes long and less than 128 bytes long.
 --
 -- `params.message`: A string containing the message or body of the comment. The
 -- body, after having all beginning and end whitespace stripped, must be at
--- least 2 bytes long and less than 65536 bytes long.
+-- least 2 bytes long and less than 2KiB long.
 -- @treturn int The ID of the reply.
 -- @usage {"jsonrpc": "2.0", "method": "reply", "id": 1,
 --  "params": {
 -- 	"parent_id": 243,
--- 	"poster": "A really cool dude",
+-- 	"author": "A really cool dude",
 -- 	"message": "Wow, great video!"
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": 511}
 function api.reply(params)
 	if type(params.parent_id) ~= "number" then
 		return nil, make_error"'parent_id' must be a string"
-	elseif type(params.poster) ~= "string" then
-		return nil, make_error"'poster' must be a string"
-	elseif params.poster:gsub("^%s+", ""):gsub("%s+$", "") == "" then
-		return nil, make_error"'poster' only whitespace"
+	elseif type(params.author) ~= "string" then
+		return nil, make_error"'author' must be a string"
+	elseif params.author:gsub("^%s+", ""):gsub("%s+$", "") == "" then
+		return nil, make_error"'author' only whitespace"
 	elseif type(params.message) ~= "string" then
 		return nil, make_error"'message' must be a string"
 	elseif params.message:gsub("^%s+", ""):gsub("%s+$", "") == "" then
 		return nil, make_error"'message' only whitespace"
 	end
 	
-	-- Strip head-and-tail whitespace from poster and message.
-	params.poster = params.poster:gsub("^%s+", ""):gsub("%s+$", "")
+	-- Strip head-and-tail whitespace from author and message.
+	params.author = params.author:gsub("^%s+", ""):gsub("%s+$", "")
 	params.message = params.message:gsub("^%s+", ""):gsub("%s+$", "")
 	
-	if params.poster:len() > 127 then
-		return nil, make_error"'poster' too long"
-	elseif params.poster:len() < 2 then
-		return nil, make_error"'poster' too short"
-	elseif params.message:len() > 65535 then
+	if params.author:len() > 127 then
+		return nil, make_error"'author' too long"
+	elseif params.author:len() < 2 then
+		return nil, make_error"'author' too short"
+	elseif params.message:len() > 2048 then
 		return nil, make_error"'message' too long"
 	elseif params.message:len() < 2 then
 		return nil, make_error"'message' too short"
@@ -644,7 +579,7 @@ function api.reply(params)
 	
 	local id, err_msg = db.comments.new_reply(
 	                     params.parent_id,
-			     params.poster,
+			     params.author,
 	                     params.message
 	                    )
 	
@@ -664,44 +599,14 @@ end
 --
 -- `params.comm_index`: An int containing the ID of the comment that data is
 -- being requested for.
---
--- `params.better_keys` [optional]: A boolean describing whether the data
--- returned uses the old fields or uses the new fields. The differences between
--- the new and old fields are described in the return section. Defaults to
--- `false`.
 -- @treturn[1] table A comment object.
---
--- Old fields:
---
--- `comm_index`: An int holding the index of the comment.
---
--- `claim_index`: An int holding the index of the claims that this is a
--- comment on.
---
--- `poster_name`: A string holding the name of the poster.
---
--- `parent_com`: An int holding the `comment_id` field of another comment
--- object that is the parent of this comment. Because these comments are always
--- top-level comments, the field is omitted (`nil`).
---
--- `post_time`: An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds.
---
--- `message`: A string holding the body of the comment.
---
--- `upvotes`: An int representing the amount of upvotes for that comment.
---
--- `downvotes`: An int representing the amount of downvotes for that
--- comment.
--- 
--- New fields:
 --
 -- `comment_id`: An int holding the index of the comment.
 --
 -- `claim_id`: An int holding the index of the claims that this is a
 -- comment on.
 --
--- `author`: A string holding the name of the poster.
+-- `author`: A string holding the name of the author.
 --
 -- `parent_id`: An int holding the `comment_id` field of another comment
 -- object that is the parent of this comment. Because these comments are always
@@ -722,10 +627,10 @@ end
 -- }} -> [server]
 -- [server] -> {"jsonrpc": "2.0", "id": 1, "result": {
 --  "comm_index": 1,
---  "claim_index": 1,
---  "poster_name": "cool",
---  "parent_com": null,
---  "post_time": 1544759333,
+--  "claim_id": 1,
+--  "author": "cool",
+--  "parent_id": null,
+--  "time_posted": 1544759333,
 --  "message": "whats up dude?",
 --  "upvotes": 0,
 --  "downvotes": 0
@@ -735,27 +640,11 @@ function api.get_comment_data(params)
 		return nil, make_error"'comm_index' must be an int"
 	elseif params.comm_index % 1 ~= 0 then
 		return nil, make_error"'comm_index' must be an int"
-	elseif type(params.better_keys) ~= "boolean" and
-	       params.better_keys ~= nil then
-		return nil, make_error("'better_keys' must be a boolean")
 	end
 	
 	local data, err_msg = db.comments.get_data(params.comm_index)
 	
 	if data and not err_msg then
-		if params.better_keys then
-			data.comment_id = data.comm_index
-			data.author = data.poster_name
-			data.parent_id = data.parent_com
-			data.time_posted = data.post_time
-			data.claim_id = data.claim_index
-			data.claim_index = nil
-			data.comm_index = nil
-			data.poster_name = nil
-			data.parent_com = nil
-			data.post_time = nil
-		end
-		
 		return data
 	elseif err_msg == "comment doesnt exist" then
 		return json.null

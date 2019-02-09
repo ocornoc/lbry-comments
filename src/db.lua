@@ -53,7 +53,7 @@ local new_mutex = require "mutex"
 --- Version of the API.
 -- Follows SemVer 2.0.0
 -- https://semver.org/spec/v2.0.0.html
-local DB_VERSION = "1.2.0"
+local DB_VERSION = "2.0.0-alpha"
 
 --- The UTC Unix Epoch time in seconds of the last backup's creation.
 local last_backup_time = 0
@@ -175,22 +175,22 @@ CREATE TABLE IF NOT EXISTS claims (
 -- This contains all of the comments in the database.
 -- @table accouts.comments
 -- @local
--- @field comm_index An int holding the index of the comment.
+-- @field comment_id An int holding the index of the comment.
 -- @field claim_index An int holding the index of the claims that this is a
 -- comment on. It must be a real claim index and will throw if it isn't. Also,
 -- when the claim that this comment is attached to is deleted or updated
 -- (moved), this value will change, too. If deletion, the comment will get
 -- automatically deleted.
--- @field poster_name A string holding the name of the poster. Must not == ""
+-- @field author A string holding the name of the poster. Must not == ""
 -- and defaults to "A Cool LBRYian".
--- @field parent_com A potentially-`null` int holding the index to another
+-- @field parent_id A potentially-`null` int holding the index to another
 -- comment. If this field is `null`, then this comment is a "TLC" (top-level
 -- comment, a comment that isn't a reply). If it does holder a value, then the
 -- value is the index of the comment that this is a reply to. If the commen that
 -- is referenced in this value is updated (moved), then this value automatically
 -- updates to reflect that. If the parent comment is deleted, this reply is
 -- automatically deleted too.
--- @field post_time An int representing the time of the row's insertion into the
+-- @field time_posted An int representing the time of the row's insertion into the
 -- database, stored as UTC Epoch seconds. Must be >= 0.
 -- @field message A string holding the body of the comment. Must not == "".
 -- @field upvotes An int representing the amount of upvotes for that comment.
@@ -200,11 +200,11 @@ CREATE TABLE IF NOT EXISTS claims (
 -- @see accouts.claims
 assert(accouts:execute[[
 CREATE TABLE IF NOT EXISTS comments (
-	comm_index    INTEGER PRIMARY KEY,
+	comment_id    INTEGER PRIMARY KEY,
 	claim_index   INTEGER NOT NULL REFERENCES claims(claim_index) ON DELETE CASCADE ON UPDATE CASCADE,
-	poster_name   TEXT    NOT NULL DEFAULT 'A Cool LBRYian' CHECK (poster_name != ''),
-	parent_com    INTEGER REFERENCES comments(comm_index) ON DELETE CASCADE ON UPDATE CASCADE,
-	post_time     INTEGER NOT NULL CHECK (post_time >= 0),
+	author        TEXT    NOT NULL DEFAULT 'A Cool LBRYian' CHECK (author != ''),
+	parent_id     INTEGER REFERENCES comments(comment_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	time_posted   INTEGER NOT NULL CHECK (time_posted >= 0),
 	message       TEXT    NOT NULL CHECK (message != ''),
 	upvotes       INTEGER NOT NULL DEFAULT 0 CHECK (upvotes >= 0),
 	downvotes     INTEGER NOT NULL DEFAULT 0 CHECK (downvotes >= 0) );
@@ -549,7 +549,7 @@ function _M.claims.get_comments(claim_uri, int_ind)
 	local claim_index = claim_data.claim_index
 	
 	local curs, err_msg = accouts:execute(
-	 "SELECT * FROM comments WHERE parent_com IS NULL AND claim_index = " ..
+	 "SELECT * FROM comments WHERE parent_id IS NULL AND claim_index = " ..
 	 claim_index .. ";"
 	)
 	
@@ -619,9 +619,9 @@ function _M.comments.new(claim_uri, poster, message)
 	end
 	
 	local claim_index = claim_data.claim_index
-	local poster_name = accouts:escape(poster:gsub("^%s+", "")
+	local author = accouts:escape(poster:gsub("^%s+", "")
 	                                         :gsub("%s+$", ""))
-	local post_time = get_unix_time()
+	local time_posted = get_unix_time()
 	-- We strip all beginning and ending whitespace from 'message'.
 	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
 	
@@ -630,9 +630,9 @@ function _M.comments.new(claim_uri, poster, message)
 	
 	mutex:call_when_safe(function()
 		accouts:execute(
-		 "INSERT INTO comments (claim_index, poster_name, post_time," ..
-		 " message) VALUES (" .. claim_index .. ", '" .. poster_name ..
-		 "', " .. post_time .. ", '" .. message .. "');"
+		 "INSERT INTO comments (claim_index, author, time_posted," ..
+		 " message) VALUES (" .. claim_index .. ", '" .. author ..
+		 "', " .. time_posted .. ", '" .. message .. "');"
 		)
 		
 		comm_id = get_latest_comment()
@@ -673,9 +673,9 @@ function _M.comments.new_reply(parent_id, poster, message)
 	end
 	
 	local claim_index = parent_data.claim_index
-	local poster_name = accouts:escape(poster:gsub("^%s+", "")
+	local author = accouts:escape(poster:gsub("^%s+", "")
 	                                         :gsub("%s+$", ""))
-	local post_time = get_unix_time()
+	local time_posted = get_unix_time()
 	-- We strip all beginning and ending whitespace from 'message'.
 	message = accouts:escape(message:gsub("^%s+", ""):gsub("%s+$", ""))
 	
@@ -684,10 +684,10 @@ function _M.comments.new_reply(parent_id, poster, message)
 	
 	mutex:call_when_safe(function()
 		accouts:execute(
-		 "INSERT INTO comments (claim_index, poster_name, " ..
-		 "parent_com, post_time, message) VALUES (" .. claim_index ..
-		 ", '" .. poster_name .. "', " .. parent_id .. ", " ..
-		 post_time .. ", '" .. message .. "');"
+		 "INSERT INTO comments (claim_index, author, " ..
+		 "parent_id, time_posted, message) VALUES (" .. claim_index ..
+		 ", '" .. author .. "', " .. parent_id .. ", " ..
+		 time_posted .. ", '" .. message .. "');"
 		)
 		
 		comm_id = get_latest_comment()
@@ -715,7 +715,7 @@ function _M.comments.get_data(comment_id, int_ind)
 	end
 	
 	local curs, err_msg = accouts:execute(
-	 "SELECT * FROM comments WHERE comm_index = '" .. comment_id .. "';"
+	 "SELECT * FROM comments WHERE comment_id = '" .. comment_id .. "';"
 	)
 	
 	if not curs or err_msg then
@@ -764,7 +764,7 @@ function _M.comments.get_replies(comment_id, int_ind)
 	end
 	
 	local curs, err_msg = accouts:execute(
-	 "SELECT * FROM comments WHERE parent_com = '" .. comment_id .. "';"
+	 "SELECT * FROM comments WHERE parent_id = '" .. comment_id .. "';"
 	)
 	
 	if not curs or err_msg then
@@ -819,7 +819,7 @@ function _M.comments.upvote(comment_id, times)
 		
 		accouts:execute(
 		 "UPDATE comments SET upvotes = " .. votes ..
-		 " WHERE comm_index = '" .. comment_id .. "';"
+		 " WHERE comment_id = '" .. comment_id .. "';"
 		)
 	end)
 	
@@ -862,7 +862,7 @@ function _M.comments.downvote(comment_id, times)
 		
 		accouts:execute(
 		 "UPDATE comments SET downvotes = " .. votes ..
-		 " WHERE comm_index = '" .. comment_id .. "';"
+		 " WHERE comment_id = '" .. comment_id .. "';"
 		)
 	end)
 	

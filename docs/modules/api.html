@@ -337,12 +337,7 @@
 
 <p> <code>params.uri</code>: A string containing a full-length permanent LBRY claim URI.
  If the URI isn't valid/acceptable, the function will return with an
- <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
-
-<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
- returned uses the old fields or uses the new fields. The differences between
- the new and old fields are described in the return section. Defaults to
- <code>false</code>.
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
         </li>
     </ul>
 
@@ -559,12 +554,7 @@
 
 <p> <code>params.uri</code>: A string containing a full-length permanent LBRY claim URI.
  If the URI isn't valid/acceptable, the function will return with an
- <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
-
-<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
- returned uses the old fields or uses the new fields. The differences between
- the new and old fields are described in the return section. Defaults to
- <code>false</code>.
+ <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.
         </li>
     </ul>
 
@@ -574,37 +564,12 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
          An array of top-level comments.</p>
 
-<p> Old fields for each comment:</p>
-
-<p> <code>comm_index</code>: An int holding the index of the comment.</p>
-
-<p> <code>claim_index</code>: An int holding the index of the claims that this is a
- comment on.</p>
-
-<p> <code>poster_name</code>: A string holding the name of the poster.</p>
-
-<p> <code>parent_com</code>: An int holding the <code>comment_id</code> field of another comment
- object that is the parent of this comment. Because these comments are always
- top-level comments, the field is omitted (<code>nil</code>).</p>
-
-<p> <code>post_time</code>: An int representing the time of the row's insertion into the
- database, stored as UTC Epoch seconds.</p>
-
-<p> <code>message</code>: A string holding the body of the comment.</p>
-
-<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
-
-<p> <code>downvotes</code>: An int representing the amount of downvotes for that
- comment.</p>
-
-<p> New fields for each comment:</p>
-
 <p> <code>comment_id</code>: An int holding the index of the comment.</p>
 
 <p> <code>claim_id</code>: An int holding the index of the claims that this is a
  comment on.</p>
 
-<p> <code>author</code>: A string holding the name of the poster.</p>
+<p> <code>author</code>: A string holding the name of the author.</p>
 
 <p> <code>parent_id</code>: An int holding the <code>comment_id</code> field of another comment
  object that is the parent of this comment. Because these comments are always
@@ -649,8 +614,6 @@
     </dt>
     <dd>
     Creates a top-level comment and returns its ID.
- WARNING: The function db.comments.new causes a data race! Make sure to spit
- on the devs until they fix it.
 
 
     <h3>Parameters:</h3>
@@ -663,7 +626,7 @@
  If the URI isn't valid/acceptable, the function will return with an
  <a href="../modules/api.html#error_code.INVALID_URI">error_code.INVALID_URI</a> response.</p>
 
-<p> <code>params.poster</code>: A string containing the username or moniker of the poster.
+<p> <code>params.author</code>: A string containing the username or moniker of the author.
  The string, after having all beginning and end whitespace stripped, must be
  at least 2 bytes long and less than 128 bytes long.</p>
 
@@ -687,7 +650,7 @@
         <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"comment"</span>, <span class="string">"id"</span>: <span class="number">1</span>,
  <span class="string">"params"</span>: {
 	<span class="string">"uri"</span>: <span class="string">"lbry://lolkris#53ecfd214b62f38b1bec9849b7a69127b30cd26c"</span>,
-	<span class="string">"poster"</span>: <span class="string">"A really cool dude"</span>,
+	<span class="string">"author"</span>: <span class="string">"A really cool dude"</span>,
 	<span class="string">"message"</span>: <span class="string">"Wow, great video!"</span>
 }} -&gt; [server]
 [server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">14</span>}</pre>
@@ -700,8 +663,6 @@
     </dt>
     <dd>
     Creates a reply and returns its ID.
- WARNING: The function db.comments.new_reply causes a data race! Make sure to
- spit on the devs until they fix it.
 
 
     <h3>Parameters:</h3>
@@ -713,13 +674,13 @@
 <p> <code>params.parent_id</code>: An int containing the comment ID of the comment that this
  reply is intended to be a reply to.</p>
 
-<p> <code>params.poster</code>: A string containing the username or moniker of the poster.
+<p> <code>params.author</code>: A string containing the username or moniker of the author.
  The string, after having all beginning and end whitespace stripped, must be
  at least 2 bytes long and less than 128 bytes long.</p>
 
 <p> <code>params.message</code>: A string containing the message or body of the comment. The
  body, after having all beginning and end whitespace stripped, must be at
- least 2 bytes long and less than 65536 bytes long.
+ least 2 bytes long and less than 2KiB long.
         </li>
     </ul>
 
@@ -737,7 +698,7 @@
         <pre class="example">{<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"method"</span>: <span class="string">"reply"</span>, <span class="string">"id"</span>: <span class="number">1</span>,
  <span class="string">"params"</span>: {
 	<span class="string">"parent_id"</span>: <span class="number">243</span>,
-	<span class="string">"poster"</span>: <span class="string">"A really cool dude"</span>,
+	<span class="string">"author"</span>: <span class="string">"A really cool dude"</span>,
 	<span class="string">"message"</span>: <span class="string">"Wow, great video!"</span>
 }} -&gt; [server]
 [server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: <span class="number">511</span>}</pre>
@@ -759,12 +720,7 @@
          The table of parameters.</p>
 
 <p> <code>params.comm_index</code>: An int containing the ID of the comment that data is
- being requested for.</p>
-
-<p> <code>params.better_keys</code> [optional]: A boolean describing whether the data
- returned uses the old fields or uses the new fields. The differences between
- the new and old fields are described in the return section. Defaults to
- <code>false</code>.
+ being requested for.
         </li>
     </ul>
 
@@ -774,37 +730,12 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
          A comment object.</p>
 
-<p> Old fields:</p>
-
-<p> <code>comm_index</code>: An int holding the index of the comment.</p>
-
-<p> <code>claim_index</code>: An int holding the index of the claims that this is a
- comment on.</p>
-
-<p> <code>poster_name</code>: A string holding the name of the poster.</p>
-
-<p> <code>parent_com</code>: An int holding the <code>comment_id</code> field of another comment
- object that is the parent of this comment. Because these comments are always
- top-level comments, the field is omitted (<code>nil</code>).</p>
-
-<p> <code>post_time</code>: An int representing the time of the row's insertion into the
- database, stored as UTC Epoch seconds.</p>
-
-<p> <code>message</code>: A string holding the body of the comment.</p>
-
-<p> <code>upvotes</code>: An int representing the amount of upvotes for that comment.</p>
-
-<p> <code>downvotes</code>: An int representing the amount of downvotes for that
- comment.</p>
-
-<p> New fields:</p>
-
 <p> <code>comment_id</code>: An int holding the index of the comment.</p>
 
 <p> <code>claim_id</code>: An int holding the index of the claims that this is a
  comment on.</p>
 
-<p> <code>author</code>: A string holding the name of the poster.</p>
+<p> <code>author</code>: A string holding the name of the author.</p>
 
 <p> <code>parent_id</code>: An int holding the <code>comment_id</code> field of another comment
  object that is the parent of this comment. Because these comments are always
@@ -836,10 +767,10 @@
 }} -&gt; [server]
 [server] -&gt; {<span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>, <span class="string">"id"</span>: <span class="number">1</span>, <span class="string">"result"</span>: {
  <span class="string">"comm_index"</span>: <span class="number">1</span>,
- <span class="string">"claim_index"</span>: <span class="number">1</span>,
- <span class="string">"poster_name"</span>: <span class="string">"cool"</span>,
- <span class="string">"parent_com"</span>: null,
- <span class="string">"post_time"</span>: <span class="number">1544759333</span>,
+ <span class="string">"claim_id"</span>: <span class="number">1</span>,
+ <span class="string">"author"</span>: <span class="string">"cool"</span>,
+ <span class="string">"parent_id"</span>: null,
+ <span class="string">"time_posted"</span>: <span class="number">1544759333</span>,
  <span class="string">"message"</span>: <span class="string">"whats up dude?"</span>,
  <span class="string">"upvotes"</span>: <span class="number">0</span>,
  <span class="string">"downvotes"</span>: <span class="number">0</span>
@@ -1002,7 +933,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-02-09 12:30:37 </i>
+<i style="float:right;">Last updated 2019-02-09 13:11:43 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
