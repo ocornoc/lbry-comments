@@ -210,30 +210,6 @@ CREATE TABLE IF NOT EXISTS comments (
 	downvotes     INTEGER NOT NULL DEFAULT 0 CHECK (downvotes >= 0) );
 ]])
 
---- Tracks all of the previous database backups.
--- @table accouts.backups
--- @local
--- @field backup_index An int holding the index of the backup.
--- @field creation_time An int representing the time of the row's insertion
--- into the database, stored as UTC Epoch seconds. Must be >= 0.
--- @field totalcomments An int representing the total number of comments in the
--- backup. Must be >= 0.
--- @field totalclaims An int representing the total number of claims in the
--- backup. Must be >= 0.
--- @field lbry_perm_uri A string holding the permanent LBRY URI of the claim
--- that this backup is stored at. CURRENTLY DISABLED AND NOT STORED.
--- @field size_kb An int representing the total size of the backup in KiB. The
--- value is rounded up. Must be >= 0.
-assert(accouts:execute[[
-CREATE TABLE IF NOT EXISTS backups (
-	backup_index  INTEGER PRIMARY KEY,
-	creation_time INTEGER NOT NULL UNIQUE CHECK (creation_time >= 0),
-	totalcomments INTEGER NOT NULL CHECK (totalcomments >= 0),
-	totalclaims   INTEGER NOT NULL CHECK (totalclaims >= 0),
---	lbry_perm_uri TEXT    NOT NULL UNIQUE ON CONFLICT ABORT,
-	size_kb       INTEGER NOT NULL CHECK (size_kb >= 0) );
-]])
-
 --- An escaped, Base64-encoded version of the public key.
 -- @within Constants
 local pubkey_b64 = accouts:escape(b64_encode(crypto:get_pubkey()))
