@@ -190,13 +190,18 @@ CREATE TABLE IF NOT EXISTS claims (
 -- is referenced in this value is updated (moved), then this value automatically
 -- updates to reflect that. If the parent comment is deleted, this reply is
 -- automatically deleted too.
--- @field time_posted An int representing the time of the row's insertion into the
--- database, stored as UTC Epoch seconds. Must be >= 0.
+-- @field time_posted An int representing the time of the row's insertion into
+-- the database, stored as UTC Epoch seconds. Must be >= 0.
 -- @field message A string holding the body of the comment. Must not == "".
 -- @field upvotes An int representing the amount of upvotes for that comment.
 -- Must be >= 0, defaults to 0.
 -- @field downvotes An int representing the amount of downvotes for that
 -- comment. Must be >= 0, defaults to 0.
+-- @field signature The Ed25519 signature of the contents of `message`, signed 
+-- using the key in `public_key`. Must be 64 bytes long.
+-- @field public_key The Ed25519 public key associated with the `channel_uri`
+-- that is used to sign `signature`.
+-- @field channel_uri The URI of the channel associated with the `public_key`.
 -- @see accouts.claims
 assert(accouts:execute[[
 CREATE TABLE IF NOT EXISTS comments (
@@ -207,7 +212,10 @@ CREATE TABLE IF NOT EXISTS comments (
 	time_posted   INTEGER NOT NULL CHECK (time_posted >= 0),
 	message       TEXT    NOT NULL CHECK (message != ''),
 	upvotes       INTEGER NOT NULL DEFAULT 0 CHECK (upvotes >= 0),
-	downvotes     INTEGER NOT NULL DEFAULT 0 CHECK (downvotes >= 0) );
+	downvotes     INTEGER NOT NULL DEFAULT 0 CHECK (downvotes >= 0),
+	signature     BLOB    NOT NULL UNIQUE    CHECK (LEN(signature) == 64),
+	public_key    BLOB    NOT NULL CHECK (LEN(public_key) == 32),
+	channel_uri   TEXT    NOT NULL CHECK (channel_uri != '') );
 ]])
 
 --- An escaped, Base64-encoded version of the public key.
