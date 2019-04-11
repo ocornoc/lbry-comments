@@ -501,7 +501,7 @@ function api.get_claim_comments(params)
 	local tlcs, err_msg = db.claims.get_comments(params.uri)
 	
 	if err_msg == "uri doesnt exist" then
-		return json.null
+		return json.empty_array
 	elseif err_msg then
 		return nil, make_error(err_msg, error_code.INTERNAL)
 	elseif #tlcs == 0 then
@@ -518,7 +518,6 @@ function api.get_claim_comments(params)
 			v.post_time = nil
 		end
 	end
-
 	return tlcs
 end
 
